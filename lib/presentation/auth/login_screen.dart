@@ -55,15 +55,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: Stack(
         children: [
-          // Animated gradient background
+          // Theme-aware animated gradient background
           AnimatedContainer(
             duration: const Duration(seconds: 1),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF32CD32), Color(0xFF43e97b), Color(0xFF38f9d7)],
+                colors: isDark
+                    ? [const Color(0xFF232526), const Color(0xFF414345), AppTheme.primaryColor.withOpacity(0.7)]
+                    : [const Color(0xFFe8f5e9), const Color(0xFFc8e6c9), AppTheme.primaryColor.withOpacity(0.2)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -77,11 +80,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               width: 180,
               height: 180,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withOpacity(isDark ? 0.04 : 0.08),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.white.withOpacity(0.12),
+                    color: Colors.white.withOpacity(isDark ? 0.06 : 0.12),
                     blurRadius: 40,
                     spreadRadius: 10,
                   ),
@@ -96,7 +99,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.10),
+                color: Colors.white.withOpacity(isDark ? 0.06 : 0.10),
                 shape: BoxShape.circle,
               ),
             ),
@@ -108,7 +111,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 width: size.width < 500 ? size.width * 0.92 : 400,
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
+                  color: isDark ? Colors.black.withOpacity(0.32) : Colors.white.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
@@ -121,7 +124,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     color: Colors.white.withOpacity(0.25),
                     width: 1.5,
                   ),
-                  // Glassmorphism blur
                   backgroundBlendMode: BlendMode.overlay,
                 ),
                 child: Column(
@@ -151,7 +153,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Text(
                           'Buy, Sell, Connect on Campus',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.black.withOpacity(0.6),
+                                color: isDark ? Colors.white70 : Colors.black.withOpacity(0.6),
                                 fontWeight: FontWeight.w500,
                               ),
                         ),
@@ -163,12 +165,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       label: 'Email',
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      icon: Icons.email,
                     ),
                     const SizedBox(height: 16),
                     AppTextInput(
                       label: 'Password',
                       controller: _passwordController,
                       obscureText: true,
+                      icon: Icons.lock,
                     ),
                     const SizedBox(height: 16),
                     AnimatedSwitcher(
@@ -198,12 +202,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       loading: _loading,
                     ),
                     const SizedBox(height: 8),
-                    AppButton(
-                      text: 'Sign in with Google',
-                      icon: Icons.login,
-                      onPressed: _loading ? null : _googleSignIn,
-                      loading: false,
-                      expanded: true,
+                    // Google Sign-In Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _loading ? null : _googleSignIn,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'web/icons/google_logo.png',
+                              height: 24,
+                              width: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            const Text('Sign in with Google', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextButton(
