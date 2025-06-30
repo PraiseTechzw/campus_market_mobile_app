@@ -34,7 +34,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   ];
 
   void _onSkip() async {
-    await ref.read(onboardingControllerProvider).setOnboardingComplete();
+    await ref.read(onboardingCompleteProvider.notifier).setComplete();
     if (mounted) context.go('/login');
   }
 

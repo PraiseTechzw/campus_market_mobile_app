@@ -66,10 +66,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
     redirect: (context, state) {
-      final onboardingAsync = ref.read(onboardingCompleteProvider);
+      final onboardingComplete = ref.read(onboardingCompleteProvider);
       final userAsync = ref.read(firebaseUserProvider);
       final userEntityAsync = ref.read(userEntityProvider);
-      final onboardingComplete = onboardingAsync.asData?.value ?? false;
       final isLoggedIn = userAsync.asData?.value != null;
       final isSplash = state.uri.toString() == '/splash';
       final isOnboarding = state.uri.toString() == '/onboarding';
