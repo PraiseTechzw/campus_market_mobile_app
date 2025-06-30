@@ -9,6 +9,8 @@ import '../../application/onboarding_provider.dart';
 import '../../infrastructure/auth_service.dart';
 import '../../domain/user_entity.dart';
 import 'dart:async';
+import '../home/home_screen.dart';
+import '../admin/admin_dashboard_screen.dart';
 
 // Custom ChangeNotifier to bridge a Stream to Listenable for go_router
 class StreamChangeNotifier extends ChangeNotifier {
@@ -96,18 +98,6 @@ class SplashScreen extends StatelessWidget {
   const SplashScreen({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Splash Screen')));
-}
-
-class OnboardingScreen extends StatelessWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Onboarding')));
-}
-
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Login')));
 }
 
 class HomeScreen extends StatelessWidget {
