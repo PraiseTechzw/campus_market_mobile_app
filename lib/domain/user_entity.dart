@@ -2,8 +2,8 @@ class UserEntity {
   final String uid;
   final String name;
   final String email;
-  final String role; // student, seller, landlord, admin
-  final bool verified;
+  final String role; // Always 'student' on registration. 'admin' is set only in backend for moderation.
+  final bool verified; // Used for admin verification and badges
   final String? photoURL;
 
   UserEntity({

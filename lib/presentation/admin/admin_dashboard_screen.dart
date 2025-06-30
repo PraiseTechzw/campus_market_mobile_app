@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import '../../infrastructure/auth_service.dart';
+import '../core/app_router.dart';
 
-class AdminDashboardScreen extends StatelessWidget {
+class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userEntity = ref.watch(userEntityProvider).asData?.value;
+    if (userEntity == null || userEntity.role != 'admin') {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Access Denied')),
+        body: const Center(child: Text('You do not have permission to view this page.')),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
