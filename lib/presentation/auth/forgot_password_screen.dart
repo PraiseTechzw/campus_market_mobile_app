@@ -121,12 +121,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   ),
                   backgroundBlendMode: BlendMode.overlay,
                 ),
-                child: Column(
+        child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
                         Icon(Icons.school, size: 48, color: AppTheme.primaryColor),
                         const SizedBox(width: 12),
                         Text(
@@ -141,11 +141,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     const SizedBox(height: 32),
                     AppTextInput(
                       label: 'Email',
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
                       icon: Icons.email,
-                    ),
-                    const SizedBox(height: 16),
+            ),
+            const SizedBox(height: 16),
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       child: _error != null
@@ -186,7 +186,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     ),
                     AppButton(
                       text: 'Send Reset Email',
-                      onPressed: _loading ? null : _sendReset,
+              onPressed: _loading ? null : _sendReset,
                       loading: _loading,
                     ),
                     const SizedBox(height: 8),
@@ -195,7 +195,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _loading ? null : _googleSignIn,
-                        style: ElevatedButton.styleFrom(
+              style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.black87,
                           elevation: 0,
@@ -216,14 +216,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Back to Login'),
-                    ),
-                  ],
-                ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Back to Login'),
+            ),
+          ],
+        ),
               ),
             ),
           ),
