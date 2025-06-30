@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../core/components/app_button.dart';
 import '../core/components/app_text_input.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'verification_success_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -43,7 +44,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         password: _passwordController.text.trim(),
         role: 'student',
       );
-      if (mounted) context.go('/home');
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => VerificationSuccessScreen(
+              message: 'Registration successful! Please check your email to verify your account.',
+              buttonText: 'Go to Login',
+              onButtonPressed: () => context.go('/login'),
+            ),
+          ),
+        );
+      }
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {

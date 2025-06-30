@@ -6,6 +6,7 @@ import '../core/components/app_button.dart';
 import '../core/components/app_text_input.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'verification_success_screen.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
@@ -28,7 +29,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
     try {
       await ref.read(authServiceProvider).sendPasswordResetEmail(_emailController.text.trim());
-      setState(() => _message = 'Password reset email sent!');
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => VerificationSuccessScreen(
+              message: 'Password reset email sent! Please check your inbox.',
+              buttonText: 'Back to Login',
+              onButtonPressed: () => context.go('/login'),
+            ),
+          ),
+        );
+      }
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
