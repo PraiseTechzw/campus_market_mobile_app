@@ -7,6 +7,7 @@ class AppTextInput extends StatelessWidget {
   final bool obscureText;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
+  final IconData? icon;
 
   const AppTextInput({
     Key? key,
@@ -15,6 +16,7 @@ class AppTextInput extends StatelessWidget {
     this.obscureText = false,
     this.keyboardType,
     this.validator,
+    this.icon,
   }) : super(key: key);
 
   @override
@@ -26,6 +28,7 @@ class AppTextInput extends StatelessWidget {
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
+        prefixIcon: icon != null ? Icon(icon, color: AppTheme.primaryColor) : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
