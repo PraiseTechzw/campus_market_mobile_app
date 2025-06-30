@@ -8,6 +8,7 @@ class AppTextInput extends StatelessWidget {
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
   final IconData? icon;
+  final Widget? suffixIcon;
 
   const AppTextInput({
     Key? key,
@@ -17,6 +18,7 @@ class AppTextInput extends StatelessWidget {
     this.keyboardType,
     this.validator,
     this.icon,
+    this.suffixIcon,
   }) : super(key: key);
 
   @override
@@ -29,6 +31,7 @@ class AppTextInput extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: icon != null ? Icon(icon, color: AppTheme.primaryColor) : null,
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

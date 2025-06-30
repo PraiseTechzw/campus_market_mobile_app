@@ -5,6 +5,7 @@ import '../core/app_theme.dart';
 import 'package:go_router/go_router.dart';
 import '../core/components/app_button.dart';
 import '../core/components/app_text_input.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -18,6 +19,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _loading = false;
   String? _error;
+  bool _obscurePassword = true;
 
   Future<void> _login() async {
     setState(() {
@@ -171,8 +173,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     AppTextInput(
                       label: 'Password',
                       controller: _passwordController,
-                      obscureText: true,
+                      obscureText: _obscurePassword,
                       icon: Icons.lock,
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscurePassword ? FontAwesomeIcons.eye : FontAwesomeIcons.eyeSlash, color: AppTheme.primaryColor),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     AnimatedSwitcher(
@@ -218,11 +224,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset(
-                              'web/icons/google_logo.png',
-                              height: 24,
-                              width: 24,
-                            ),
+                            const FaIcon(FontAwesomeIcons.google, color: Colors.red, size: 22),
                             const SizedBox(width: 12),
                             const Text('Sign in with Google', style: TextStyle(fontWeight: FontWeight.bold)),
                           ],

@@ -5,6 +5,7 @@ import '../core/app_theme.dart';
 import '../core/components/app_button.dart';
 import '../core/components/app_text_input.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
@@ -206,11 +207,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset(
-                              'web/icons/google_logo.png',
-                              height: 24,
-                              width: 24,
-                            ),
+                            const FaIcon(FontAwesomeIcons.google, color: Colors.red, size: 22),
                             const SizedBox(width: 12),
                             const Text('Sign in with Google', style: TextStyle(fontWeight: FontWeight.bold)),
                           ],
