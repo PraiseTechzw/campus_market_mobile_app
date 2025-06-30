@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "984032807399",
+    "firebase_url": "https://universestay-8c0e4-default-rtdb.firebaseio.com",
+    "project_id": "universestay-8c0e4",
+    "storage_bucket": "universestay-8c0e4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:984032807399:android:6f043a0a1230c31c9d1542",
+        "android_client_info": {
+          "package_name": "com.appixia.campus_market"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdNzHVzc_Mp9MNhhIxAVaZW4gQ-4AlGxQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
