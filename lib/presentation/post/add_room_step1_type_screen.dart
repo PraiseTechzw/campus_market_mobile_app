@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_room_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class AddRoomStep1TypeScreen extends HookConsumerWidget {
   const AddRoomStep1TypeScreen({Key? key}) : super(key: key);
@@ -34,7 +35,7 @@ class AddRoomStep1TypeScreen extends HookConsumerWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: state.roomType.isNotEmpty ? () {
-                  // TODO: Go to next step
+                  context.pushNamed('addRoomStep2');
                 } : null,
                 child: const Text('Next'),
               ),
