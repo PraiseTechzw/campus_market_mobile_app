@@ -17,7 +17,14 @@ class ListingAccessGuard extends HookConsumerWidget {
         if (user == null) {
           return const Center(child: Text('Not logged in.'));
         }
-        if (!user.verified || !(user.profileCompleted ?? false)) {
+        bool profileComplete =
+          user.phone != null && user.phone!.isNotEmpty &&
+          user.school != null && user.school!.isNotEmpty &&
+          user.campus != null && user.campus!.isNotEmpty &&
+          user.studentId != null && user.studentId!.isNotEmpty &&
+          user.studentIdPhotoUrl != null && user.studentIdPhotoUrl!.isNotEmpty &&
+          user.location != null && user.location!.isNotEmpty;
+        if (!user.verified || !profileComplete) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
