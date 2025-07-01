@@ -3,6 +3,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_product_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'listing_access_guard.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter/services.dart';
 
 class AddProductStep2DetailsScreen extends HookConsumerWidget {
   const AddProductStep2DetailsScreen({Key? key}) : super(key: key);
@@ -12,11 +14,22 @@ class AddProductStep2DetailsScreen extends HookConsumerWidget {
     final state = ref.watch(addProductProvider);
     final notifier = ref.read(addProductProvider.notifier);
     final primaryColor = const Color(0xFF32CD32);
-    final titleController = TextEditingController(text: state.title);
-    final descController = TextEditingController(text: state.description);
-    final priceController = TextEditingController(text: state.price == 0.0 ? '' : state.price.toString());
+    final titleController = useTextEditingController(text: state.title);
+    final descController = useTextEditingController(text: state.description);
+    final priceController = useTextEditingController(text: state.price == 0.0 ? '' : state.price.toString());
     final conditions = ['New', 'Used'];
     final isValid = state.title.isNotEmpty && state.description.isNotEmpty && state.price > 0 && state.condition.isNotEmpty;
+    final priceError = useState<String?>(null);
+    void onPriceChanged(String v) {
+      final parsed = double.tryParse(v);
+      if (parsed == null || parsed < 0) {
+        priceError.value = 'Enter a valid price';
+        notifier.updatePrice(0.0);
+      } else {
+        priceError.value = null;
+        notifier.updatePrice(parsed);
+      }
+    }
     return ListingAccessGuard(
       child: Scaffold(
         appBar: AppBar(
@@ -55,6 +68,9 @@ class AddProductStep2DetailsScreen extends HookConsumerWidget {
                   fillColor: Colors.grey[900],
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                   helperText: 'E.g. iPhone 12, Math Tutoring, etc.',
+                  suffixIcon: titleController.text.isNotEmpty
+                      ? IconButton(icon: const Icon(Icons.clear), onPressed: () => titleController.clear())
+                      : null,
                 ),
                 onChanged: notifier.updateTitle,
               ),
@@ -68,6 +84,9 @@ class AddProductStep2DetailsScreen extends HookConsumerWidget {
                   fillColor: Colors.grey[900],
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                   helperText: 'Describe your product or service...',
+                  suffixIcon: descController.text.isNotEmpty
+                      ? IconButton(icon: const Icon(Icons.clear), onPressed: () => descController.clear())
+                      : null,
                 ),
                 maxLines: 3,
                 onChanged: notifier.updateDescription,
@@ -82,9 +101,16 @@ class AddProductStep2DetailsScreen extends HookConsumerWidget {
                   fillColor: Colors.grey[900],
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                   helperText: 'Enter the price (numbers only)',
+                  errorText: priceError.value,
+                  suffixIcon: priceController.text.isNotEmpty
+                      ? IconButton(icon: const Icon(Icons.clear), onPressed: () => priceController.clear())
+                      : null,
                 ),
-                keyboardType: TextInputType.number,
-                onChanged: (v) => notifier.updatePrice(double.tryParse(v) ?? 0.0),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^[0-9]*\.?[0-9]*')),
+                ],
+                onChanged: onPriceChanged,
               ),
               const SizedBox(height: 16),
               const Text('Condition', style: TextStyle(fontWeight: FontWeight.bold)),
