@@ -99,21 +99,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           user.location == null || user.location!.isEmpty;
       }
 
+      // 1. If onboarding is not complete, always redirect to onboarding (except if already there)
       if (!onboardingComplete && !isOnboarding) {
         return '/onboarding';
       }
+
+      // 2. If not logged in, redirect to login (except if already on an auth page)
       if (onboardingComplete && !isLoggedIn && !isAuth) {
         return '/login';
       }
+
+      // 3. If profile is incomplete, redirect to profile completion (except if already there)
       if (isLoggedIn && profileIncomplete && !isProfileCompletion) {
         return '/profile-completion';
       }
+
+      // 4. If logged in, profile complete, and on onboarding/auth/profile-completion/splash, go to home
       if (isLoggedIn && !profileIncomplete && (isAuth || isOnboarding || isSplash || isProfileCompletion)) {
         if (user != null && user.role == 'admin') {
           return '/admin';
         }
         return '/home';
       }
+
+      // 5. Otherwise, no redirect
       return null;
     },
   );
