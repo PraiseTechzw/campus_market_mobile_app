@@ -11,7 +11,7 @@ void main() async {
 }
 
 class CampusMarketApp extends ConsumerWidget {
-  const CampusMarketApp({Key? key}) : super(key: key);
+  const CampusMarketApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

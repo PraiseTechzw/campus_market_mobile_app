@@ -11,6 +11,8 @@ import '../../domain/user_entity.dart';
 import 'dart:async';
 import '../home/home_screen.dart';
 import '../admin/admin_dashboard_screen.dart';
+import '../auth/profile_completion_screen.dart';
+import 'splash_screen.dart';
 
 // Custom ChangeNotifier to bridge a Stream to Listenable for go_router
 class StreamChangeNotifier extends ChangeNotifier {
@@ -64,6 +66,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/admin',
         builder: (context, state) => const AdminDashboardScreen(),
       ),
+      GoRoute(
+        path: '/profile-completion',
+        builder: (context, state) {
+          final userEntity = ref.read(userEntityProvider).asData?.value;
+          return ProfileCompletionScreen(
+            email: userEntity?.email ?? '',
+            name: userEntity?.name ?? '',
+          );
+        },
+      ),
     ],
     redirect: (context, state) {
       final onboardingComplete = ref.read(onboardingCompleteProvider);
@@ -73,6 +85,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isSplash = state.uri.toString() == '/splash';
       final isOnboarding = state.uri.toString() == '/onboarding';
       final isAuth = ['/login', '/register', '/forgot-password'].contains(state.uri.toString());
+      final isProfileCompletion = state.uri.toString() == '/profile-completion';
+      final user = userEntityAsync.asData?.value;
+
+      bool profileIncomplete = false;
+      if (user != null) {
+        profileIncomplete =
+          user.phone == null || user.phone!.isEmpty ||
+          user.school == null || user.school!.isEmpty ||
+          user.campus == null || user.campus!.isEmpty ||
+          user.studentId == null || user.studentId!.isEmpty ||
+          user.studentIdPhotoUrl == null || user.studentIdPhotoUrl!.isEmpty ||
+          user.location == null || user.location!.isEmpty;
+      }
 
       if (!onboardingComplete && !isOnboarding) {
         return '/onboarding';
@@ -80,8 +105,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (onboardingComplete && !isLoggedIn && !isAuth) {
         return '/login';
       }
-      if (isLoggedIn && (isAuth || isOnboarding || isSplash)) {
-        final user = userEntityAsync.asData?.value;
+      if (isLoggedIn && profileIncomplete && !isProfileCompletion) {
+        return '/profile-completion';
+      }
+      if (isLoggedIn && !profileIncomplete && (isAuth || isOnboarding || isSplash || isProfileCompletion)) {
         if (user != null && user.role == 'admin') {
           return '/admin';
         }
@@ -91,22 +118,3 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
   );
 });
-
-// Stub screens
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Splash Screen')));
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Home')));
-}
-
-class AdminDashboardScreen extends StatelessWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Admin Dashboard')));
-} 

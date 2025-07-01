@@ -7,6 +7,8 @@ import '../core/components/app_button.dart';
 import '../core/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../infrastructure/auth_service.dart';
+import '../core/app_router.dart';
 
 class AddProductScreen extends ConsumerStatefulWidget {
   const AddProductScreen({Key? key}) : super(key: key);
@@ -71,61 +73,89 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userEntity = ref.watch(userEntityProvider).asData?.value;
+    final isVerified = userEntity?.verificationStatus == 'approved';
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Product'),
         backgroundColor: AppTheme.primaryColor,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              AppTextInput(
-                label: 'Title',
-                controller: _titleController,
-                validator: (v) => v == null || v.isEmpty ? 'Enter title' : null,
+      body: isVerified
+          ? SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    AppTextInput(
+                      label: 'Title',
+                      controller: _titleController,
+                      validator: (v) => v == null || v.isEmpty ? 'Enter title' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    AppTextInput(
+                      label: 'Description',
+                      controller: _descController,
+                      validator: (v) => v == null || v.isEmpty ? 'Enter description' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    AppTextInput(
+                      label: 'Price (USD)',
+                      controller: _priceController,
+                      keyboardType: TextInputType.number,
+                      validator: (v) => v == null || v.isEmpty ? 'Enter price' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        AppButton(
+                          text: 'Pick Images',
+                          icon: Icons.image,
+                          expanded: false,
+                          onPressed: _pickImages,
+                        ),
+                        const SizedBox(width: 12),
+                        Text('${_images.length} selected'),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (_error != null)
+                      Text(_error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 16),
+                    AppButton(
+                      text: 'Submit',
+                      loading: _loading,
+                      onPressed: _submit,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              AppTextInput(
-                label: 'Description',
-                controller: _descController,
-                validator: (v) => v == null || v.isEmpty ? 'Enter description' : null,
+            )
+          : Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.lock, size: 64, color: Colors.red),
+                    const SizedBox(height: 24),
+                    Text(
+                      'You must be a verified student to sell or list products.',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Please complete your profile and wait for admin verification. You can still browse and buy products.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              AppTextInput(
-                label: 'Price (USD)',
-                controller: _priceController,
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? 'Enter price' : null,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  AppButton(
-                    text: 'Pick Images',
-                    icon: Icons.image,
-                    expanded: false,
-                    onPressed: _pickImages,
-                  ),
-                  const SizedBox(width: 12),
-                  Text('${_images.length} selected'),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (_error != null)
-                Text(_error!, style: const TextStyle(color: Colors.red)),
-              const SizedBox(height: 16),
-              AppButton(
-                text: 'Submit',
-                loading: _loading,
-                onPressed: _submit,
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 } 
