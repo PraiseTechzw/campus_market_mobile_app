@@ -6,6 +6,9 @@ import 'package:campus_market/application/profile_provider.dart';
 import 'package:campus_market/domain/product_entity.dart';
 import 'package:campus_market/domain/user_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
+import 'filter_modal_screen.dart';
+import 'package:campus_market/application/user_providers.dart';
 
 class MarketplaceScreen extends HookConsumerWidget {
   const MarketplaceScreen({Key? key}) : super(key: key);
@@ -20,33 +23,30 @@ class MarketplaceScreen extends HookConsumerWidget {
       'All', 'Books', 'Electronics', 'Fashion', 'Furniture', 'Others'
     ];
     final selectedCategory = useState('All');
+    final filters = useState<Map<String, dynamic>>({
+      'category': 'All',
+      'priceRange': const RangeValues(0, 100000),
+      'condition': 'All',
+      'sort': 'Newest',
+    });
 
     // Watch current user
     final userAsync = ref.watch(profileProvider);
 
     // Build filters for product provider
-    Map<String, String?> filters = {};
+    Map<String, String?> providerFilters = {};
     userAsync.whenData((user) {
-      filters = {
+      providerFilters = {
         'school': user?.school,
         'campus': user?.campus,
         'city': user?.location,
-        'category': selectedCategory.value,
+        'category': filters.value['category'],
+        'condition': filters.value['condition'],
+        // priceRange and sort handled client-side for now
       };
     });
 
-    final productsAsync = ref.watch(filteredProductListProvider(filters));
-
-    // Provider to fetch seller name by userId
-    final sellerNameProvider = FutureProvider.family<String, String>((ref, sellerId) async {
-      // Fetch user from Firestore
-      final doc = await FirebaseFirestore.instance.collection('users').doc(sellerId).get();
-      final data = doc.data();
-      if (doc.exists && data != null && data['name'] != null) {
-        return data['name'] as String;
-      }
-      return 'Unknown';
-    });
+    final productsAsync = ref.watch(filteredProductListProvider(providerFilters));
 
     return Scaffold(
       appBar: AppBar(
@@ -59,14 +59,34 @@ class MarketplaceScreen extends HookConsumerWidget {
           ),
           style: TextStyle(color: isDark ? Colors.white : Colors.black),
           onSubmitted: (query) {
-            // TODO: Navigate to SearchResultsScreen
+            if (query.trim().isNotEmpty) {
+              context.push('/search', extra: query.trim());
+            }
           },
         ),
         actions: [
           IconButton(
             icon: Icon(Icons.filter_list, color: primaryColor),
-            onPressed: () {
-              // TODO: Open FilterModalScreen
+            onPressed: () async {
+              await showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (context) => FilterModalScreen(
+                  categories: categories,
+                  initialFilters: filters.value,
+                  onApply: (newFilters) {
+                    filters.value = newFilters;
+                  },
+                  onClear: () {
+                    filters.value = {
+                      'category': 'All',
+                      'priceRange': const RangeValues(0, 100000),
+                      'condition': 'All',
+                      'sort': 'Newest',
+                    };
+                  },
+                ),
+              );
             },
           ),
         ],
@@ -91,12 +111,15 @@ class MarketplaceScreen extends HookConsumerWidget {
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     final cat = categories[index];
-                    final selected = selectedCategory.value == cat;
+                    final selected = filters.value['category'] == cat;
                     return ChoiceChip(
                       label: Text(cat),
                       selected: selected,
                       selectedColor: primaryColor.withOpacity(0.2),
-                      onSelected: (_) => selectedCategory.value = cat,
+                      onSelected: (_) => filters.value = {
+                        ...filters.value,
+                        'category': cat,
+                      },
                       labelStyle: TextStyle(
                         color: selected ? primaryColor : (isDark ? Colors.white : Colors.black),
                       ),
@@ -112,18 +135,31 @@ class MarketplaceScreen extends HookConsumerWidget {
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (e, _) => Center(child: Text('Error: $e')),
                   data: (products) {
-                    if (products.isEmpty) {
+                    // Client-side filter for price and sort
+                    var filtered = products.where((p) {
+                      final price = p.price;
+                      final range = filters.value['priceRange'] as RangeValues;
+                      final cond = filters.value['condition'];
+                      final condOk = cond == 'All' || p.condition == cond;
+                      return price >= range.start && price <= range.end && condOk;
+                    }).toList();
+                    final sort = filters.value['sort'];
+                    if (sort == 'PriceAsc') {
+                      filtered.sort((a, b) => a.price.compareTo(b.price));
+                    } else if (sort == 'PriceDesc') {
+                      filtered.sort((a, b) => b.price.compareTo(a.price));
+                    } // else Newest is default from Firestore
+                    if (filtered.isEmpty) {
                       return const Center(child: Text('No products found.'));
                     }
                     return RefreshIndicator(
                       onRefresh: () async {
-                        ref.refresh(filteredProductListProvider(filters));
+                        ref.refresh(filteredProductListProvider(providerFilters));
                       },
                       child: ListView.builder(
-                        itemCount: products.length,
+                        itemCount: filtered.length,
                         itemBuilder: (context, index) {
-                          final product = products[index];
-                          final sellerNameAsync = ref.watch(sellerNameProvider(product.sellerId));
+                          final product = filtered[index];
                           return Card(
                             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             child: ListTile(
@@ -136,15 +172,10 @@ class MarketplaceScreen extends HookConsumerWidget {
                                 children: [
                                   Text('₦${product.price.toStringAsFixed(2)}'),
                                   Text('Condition: ${product.condition}'),
-                                  sellerNameAsync.when(
-                                    data: (name) => Text('Seller: $name'),
-                                    loading: () => const Text('Seller: ...'),
-                                    error: (_, __) => const Text('Seller: Unknown'),
-                                  ),
                                 ],
                               ),
                               onTap: () {
-                                // TODO: Navigate to ProductDetailScreen
+                                context.push('/product/${product.id}', extra: product);
                               },
                             ),
                           );

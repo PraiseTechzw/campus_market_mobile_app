@@ -15,6 +15,8 @@ import '../admin/admin_dashboard_screen.dart';
 import '../auth/profile_completion_screen.dart';
 import 'splash_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../marketplace/product_detail_screen.dart';
+import '../../domain/product_entity.dart';
 
 // Custom ChangeNotifier to bridge a Stream to Listenable for go_router
 class StreamChangeNotifier extends ChangeNotifier {
@@ -80,6 +82,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             email: userEntity?.email ?? '',
             name: userEntity?.name ?? '',
           );
+        },
+      ),
+      GoRoute(
+        path: '/product/:id',
+        builder: (context, state) {
+          final product = state.extra as ProductEntity?;
+          if (product == null) {
+            return const Scaffold(body: Center(child: Text('Product not found')));
+          }
+          return ProductDetailScreen(product: product);
         },
       ),
     ],
