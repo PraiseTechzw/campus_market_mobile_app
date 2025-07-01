@@ -5,17 +5,21 @@ import '../core/components/app_text_input.dart';
 import '../core/components/app_button.dart';
 import 'dart:io';
 import 'package:country_code_picker/country_code_picker.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import '../../application/profile_provider.dart';
 
-class ProfileCompletionScreen extends StatefulWidget {
+class ProfileCompletionScreen extends ConsumerStatefulWidget {
   final String email;
   final String name;
   const ProfileCompletionScreen({Key? key, required this.email, required this.name}) : super(key: key);
 
   @override
-  State<ProfileCompletionScreen> createState() => _ProfileCompletionScreenState();
+  ConsumerState<ProfileCompletionScreen> createState() => _ProfileCompletionScreenState();
 }
 
-class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
+class _ProfileCompletionScreenState extends ConsumerState<ProfileCompletionScreen> {
   int _currentStep = 0;
   CountryCode _selectedCountryCode = CountryCode(code: 'ZW', dialCode: '+263', name: 'Zimbabwe');
   final _phoneController = TextEditingController();
@@ -510,8 +514,37 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
     if (!_profileComplete) return;
     setState(() => _isSaving = true);
     try {
-      // Simulate save delay. Replace with actual save logic.
-      await Future.delayed(const Duration(seconds: 2));
+      // Upload student ID photo
+      String? studentIdPhotoUrl;
+      if (_studentIdPhoto != null) {
+        studentIdPhotoUrl = await ref.read(profileProvider.notifier).uploadStudentId(_studentIdPhoto!.path);
+      }
+      // Upload profile photo
+      String? profilePhotoUrl;
+      if (_profilePhoto != null) {
+        final uid = await Future.value(ref.read(profileProvider.notifier));
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) throw Exception('Not logged in');
+        final refStorage = FirebaseStorage.instance.ref('profile_photos/${user.uid}/${DateTime.now().millisecondsSinceEpoch}.jpg');
+        final upload = await refStorage.putFile(File(_profilePhoto!.path));
+        profilePhotoUrl = await upload.ref.getDownloadURL();
+      }
+      // Update profile in Firestore
+      await ref.read(profileProvider.notifier).updateProfile({
+        'name': widget.name,
+        'email': widget.email,
+        'phone': _phoneController.text.trim(),
+        'school': _schoolController.text.trim(),
+        'campus': _campusController.text.trim(),
+        'studentId': _studentIdController.text.trim(),
+        'studentIdPhotoUrl': studentIdPhotoUrl,
+        'location': _locationController.text.trim(),
+        'dateOfBirth': _dobController.text.trim(),
+        'gender': _gender,
+        'profilePhotoUrl': profilePhotoUrl,
+        'bio': _bioController.text.trim(),
+        'verificationStatus': 'pending',
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile saved successfully!')),
