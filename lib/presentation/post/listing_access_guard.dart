@@ -47,7 +47,9 @@ class ListingAccessGuard extends HookConsumerWidget {
             ),
           );
         }
-        return child;
+        return Scaffold(
+body: child
+        ) ;
       },
     );
   }

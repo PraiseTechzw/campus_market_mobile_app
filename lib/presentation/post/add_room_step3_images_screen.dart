@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_room_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'listing_access_guard.dart';
 
 class AddRoomStep3ImagesScreen extends HookConsumerWidget {
   const AddRoomStep3ImagesScreen({Key? key}) : super(key: key);
@@ -11,81 +12,83 @@ class AddRoomStep3ImagesScreen extends HookConsumerWidget {
     final state = ref.watch(addRoomProvider);
     final notifier = ref.read(addRoomProvider.notifier);
     // For now, just show a placeholder for images
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Room Images'),
-        leading: BackButton(onPressed: () {
-          context.goNamed('addRoomStep2');
-        }),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Add 3–5 images'),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 100,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: state.imageUrls.length + 1,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  if (index < state.imageUrls.length) {
-                    final url = state.imageUrls[index];
-                    return Stack(
-                      children: [
-                        Image.network(url, width: 100, height: 100, fit: BoxFit.cover),
-                        Positioned(
-                          top: 0, right: 0,
-                          child: IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              // TODO: Remove image
-                            },
+    return ListingAccessGuard(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Room Images'),
+          leading: BackButton(onPressed: () {
+            context.goNamed('addRoomStep2');
+          }),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Add 3–5 images'),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 100,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: state.imageUrls.length + 1,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    if (index < state.imageUrls.length) {
+                      final url = state.imageUrls[index];
+                      return Stack(
+                        children: [
+                          Image.network(url, width: 100, height: 100, fit: BoxFit.cover),
+                          Positioned(
+                            top: 0, right: 0,
+                            child: IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                // TODO: Remove image
+                              },
+                            ),
                           ),
+                        ],
+                      );
+                    } else {
+                      return GestureDetector(
+                        onTap: () {
+                          // TODO: Pick image
+                        },
+                        child: Container(
+                          width: 100, height: 100,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.add_a_photo),
                         ),
-                      ],
-                    );
-                  } else {
-                    return GestureDetector(
-                      onTap: () {
-                        // TODO: Pick image
-                      },
-                      child: Container(
-                        width: 100, height: 100,
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.add_a_photo),
-                      ),
-                    );
-                  }
-                },
+                      );
+                    }
+                  },
+                ),
               ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      context.goNamed('addRoomStep2');
-                    },
-                    child: const Text('Back'),
+              const Spacer(),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        context.goNamed('addRoomStep2');
+                      },
+                      child: const Text('Back'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: state.imageUrls.length >= 3 ? () {
-                      context.pushNamed('addRoomStep4');
-                    } : null,
-                    child: const Text('Next'),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: state.imageUrls.length >= 3 ? () {
+                        context.pushNamed('addRoomStep4');
+                      } : null,
+                      child: const Text('Next'),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

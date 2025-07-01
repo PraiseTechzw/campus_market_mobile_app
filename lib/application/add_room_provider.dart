@@ -1,5 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter/material.dart';
+import '../domain/room_entity.dart';
+import '../infrastructure/room_repository.dart';
 
 class AddRoomState {
   final String roomType;
@@ -74,4 +76,75 @@ class AddRoomNotifier extends StateNotifier<AddRoomState> {
   void reset() => state = AddRoomState();
 }
 
-final addRoomProvider = StateNotifierProvider<AddRoomNotifier, AddRoomState>((ref) => AddRoomNotifier()); 
+final addRoomProvider = StateNotifierProvider<AddRoomNotifier, AddRoomState>((ref) => AddRoomNotifier());
+
+class RoomFilter {
+  final String? school;
+  final String? campus;
+  final String? city;
+  final String? type;
+  final List<String>? amenities;
+  final double? minPrice;
+  final double? maxPrice;
+  final String sortBy;
+  final bool descending;
+
+  const RoomFilter({
+    this.school,
+    this.campus,
+    this.city,
+    this.type,
+    this.amenities,
+    this.minPrice,
+    this.maxPrice,
+    this.sortBy = 'createdAt',
+    this.descending = true,
+  });
+
+  RoomFilter copyWith({
+    String? school,
+    String? campus,
+    String? city,
+    String? type,
+    List<String>? amenities,
+    double? minPrice,
+    double? maxPrice,
+    String? sortBy,
+    bool? descending,
+  }) {
+    return RoomFilter(
+      school: school ?? this.school,
+      campus: campus ?? this.campus,
+      city: city ?? this.city,
+      type: type ?? this.type,
+      amenities: amenities ?? this.amenities,
+      minPrice: minPrice ?? this.minPrice,
+      maxPrice: maxPrice ?? this.maxPrice,
+      sortBy: sortBy ?? this.sortBy,
+      descending: descending ?? this.descending,
+    );
+  }
+}
+
+final roomFilterProvider = StateProvider<RoomFilter>((ref) => const RoomFilter());
+
+final filteredRoomsProvider = StreamProvider<List<RoomEntity>>((ref) {
+  final filter = ref.watch(roomFilterProvider);
+  final repo = ref.watch(roomRepositoryProvider);
+  return repo.fetchFilteredRooms(
+    school: filter.school,
+    campus: filter.campus,
+    city: filter.city,
+    type: filter.type,
+    amenities: filter.amenities,
+    minPrice: filter.minPrice,
+    maxPrice: filter.maxPrice,
+    sortBy: filter.sortBy,
+    descending: filter.descending,
+  );
+});
+
+final roomSearchProvider = StreamProvider.family<List<RoomEntity>, String>((ref, keyword) {
+  final repo = ref.watch(roomRepositoryProvider);
+  return repo.searchRooms(keyword);
+}); 
