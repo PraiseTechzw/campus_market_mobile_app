@@ -543,30 +543,19 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                         return Row(
                           children: [
                             AppButton(
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  child: Stepper(
-                    key: ValueKey(_currentStep),
-                    currentStep: _currentStep,
-                    onStepContinue: _continue,
-                    onStepCancel: _cancel,
-                    steps: _steps,
-                    controlsBuilder: (BuildContext context, ControlsDetails details) {
-                      return Row(
-                        children: [
-                          AppButton(
-                            text: _currentStep == _steps.length - 1 ? 'Finish' : 'Next',
-                            expanded: false,
-                            onPressed: details.onStepContinue,
-                          ),
-                          if (_currentStep > 0)
-                            TextButton(
-                              onPressed: details.onStepCancel,
-                              child: const Text('Back'),
+                              text: _currentStep == _steps.length - 1 ? 'Finish' : 'Next',
+                              expanded: false,
+                              onPressed: details.onStepContinue,
                             ),
-                        ],
-                      );
-                    },
+                            if (_currentStep > 0)
+                              TextButton(
+                                onPressed: details.onStepCancel,
+                                child: const Text('Back'),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
