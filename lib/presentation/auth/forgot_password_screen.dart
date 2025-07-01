@@ -7,6 +7,7 @@ import '../core/components/app_text_input.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'verification_success_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
@@ -20,6 +21,24 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   bool _loading = false;
   String? _message;
   String? _error;
+
+  String _getFriendlyError(dynamic error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'invalid-email':
+          return 'The email address is not valid.';
+        case 'user-not-found':
+          return 'No user found for that email.';
+        case 'too-many-requests':
+          return 'Too many attempts. Please try again later.';
+        case 'network-request-failed':
+          return 'Network error. Please check your connection.';
+        default:
+          return 'Failed to send reset email. Please try again.';
+      }
+    }
+    return 'An unexpected error occurred. Please try again.';
+  }
 
   Future<void> _sendReset() async {
     setState(() {
@@ -40,8 +59,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
         );
       }
+    } on FirebaseAuthException catch (e) {
+      setState(() => _error = _getFriendlyError(e));
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = _getFriendlyError(e));
     } finally {
       setState(() => _loading = false);
     }
@@ -55,8 +76,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     try {
       await ref.read(authServiceProvider).signInWithGoogle();
       if (mounted) context.go('/home');
+    } on FirebaseAuthException catch (e) {
+      setState(() => _error = _getFriendlyError(e));
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = _getFriendlyError(e));
     } finally {
       setState(() => _loading = false);
     }

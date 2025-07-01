@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../core/components/app_button.dart';
 import '../core/components/app_text_input.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -21,6 +22,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _error;
   bool _obscurePassword = true;
 
+  String _getFriendlyError(dynamic error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'invalid-email':
+          return 'The email address is not valid.';
+        case 'user-disabled':
+          return 'This user has been disabled.';
+        case 'user-not-found':
+          return 'No user found for that email.';
+        case 'wrong-password':
+          return 'Incorrect password. Please try again.';
+        case 'too-many-requests':
+          return 'Too many attempts. Please try again later.';
+        case 'network-request-failed':
+          return 'Network error. Please check your connection.';
+        default:
+          return 'Authentication failed. Please try again.';
+      }
+    }
+    return 'An unexpected error occurred. Please try again.';
+  }
+
   Future<void> _login() async {
     setState(() {
       _loading = true;
@@ -32,8 +55,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         password: _passwordController.text.trim(),
       );
       if (mounted) context.go('/home');
+    } on FirebaseAuthException catch (e) {
+      setState(() => _error = _getFriendlyError(e));
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = _getFriendlyError(e));
     } finally {
       setState(() => _loading = false);
     }
@@ -47,8 +72,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref.read(authServiceProvider).signInWithGoogle();
       if (mounted) context.go('/home');
+    } on FirebaseAuthException catch (e) {
+      setState(() => _error = _getFriendlyError(e));
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = _getFriendlyError(e));
     } finally {
       setState(() => _loading = false);
     }

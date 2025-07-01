@@ -7,6 +7,7 @@ import '../core/components/app_button.dart';
 import '../core/components/app_text_input.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'verification_success_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -24,6 +25,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _error;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+
+  String _getFriendlyError(dynamic error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'email-already-in-use':
+          return 'This email is already in use.';
+        case 'invalid-email':
+          return 'The email address is not valid.';
+        case 'operation-not-allowed':
+          return 'Operation not allowed. Please contact support.';
+        case 'weak-password':
+          return 'The password is too weak.';
+        case 'too-many-requests':
+          return 'Too many attempts. Please try again later.';
+        case 'network-request-failed':
+          return 'Network error. Please check your connection.';
+        default:
+          return 'Registration failed. Please try again.';
+      }
+    }
+    return 'An unexpected error occurred. Please try again.';
+  }
 
   Future<void> _register() async {
     setState(() {
@@ -55,8 +78,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
         );
       }
+    } on FirebaseAuthException catch (e) {
+      setState(() => _error = _getFriendlyError(e));
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = _getFriendlyError(e));
     } finally {
       setState(() => _loading = false);
     }
@@ -70,8 +95,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     try {
       await ref.read(authServiceProvider).signInWithGoogle();
       if (mounted) context.go('/home');
+    } on FirebaseAuthException catch (e) {
+      setState(() => _error = _getFriendlyError(e));
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = _getFriendlyError(e));
     } finally {
       setState(() => _loading = false);
     }
