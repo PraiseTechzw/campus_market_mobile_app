@@ -7,14 +7,21 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter/cupertino.dart';
 
 class AddProductStep4ImagesScreen extends HookConsumerWidget {
   const AddProductStep4ImagesScreen({Key? key}) : super(key: key);
 
-  Future<String> _uploadImage(File file) async {
+  Future<String> _uploadImage(File file, void Function(double) onProgress) async {
     final ref = FirebaseStorage.instance.ref('product_images/${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}');
-    final uploadTask = await ref.putFile(file);
-    return await uploadTask.ref.getDownloadURL();
+    final uploadTask = ref.putFile(file);
+    uploadTask.snapshotEvents.listen((event) {
+      if (event.totalBytes > 0) {
+        onProgress(event.bytesTransferred / event.totalBytes);
+      }
+    });
+    final snapshot = await uploadTask;
+    return await snapshot.ref.getDownloadURL();
   }
 
   @override
@@ -23,15 +30,24 @@ class AddProductStep4ImagesScreen extends HookConsumerWidget {
     final notifier = ref.read(addProductProvider.notifier);
     final primaryColor = const Color(0xFF32CD32);
     final isLoading = useState(false);
+    final uploadProgress = useState<List<double>>(List.filled(state.imageUrls.length + 1, 0.0));
     final picker = ImagePicker();
+    final images = useState<List<String>>(List.from(state.imageUrls));
 
-    Future<void> pickAndUploadImage() async {
-      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    Future<void> pickAndUploadImage(ImageSource source) async {
+      final picked = await picker.pickImage(source: source, imageQuality: 85);
       if (picked != null) {
         isLoading.value = true;
+        uploadProgress.value = [...uploadProgress.value, 0.0];
         try {
-          final url = await _uploadImage(File(picked.path));
-          notifier.updateImages([...state.imageUrls, url]);
+          final url = await _uploadImage(File(picked.path), (progress) {
+            final idx = images.value.length;
+            final updated = List<double>.from(uploadProgress.value);
+            if (idx < updated.length) updated[idx] = progress;
+            uploadProgress.value = updated;
+          });
+          images.value = [...images.value, url];
+          notifier.updateImages(images.value);
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Failed to upload image: $e')),
@@ -42,9 +58,51 @@ class AddProductStep4ImagesScreen extends HookConsumerWidget {
       }
     }
 
-    void removeImage(int index) {
-      final newList = List<String>.from(state.imageUrls)..removeAt(index);
-      notifier.updateImages(newList);
+    void showImageSourcePicker() {
+      showModalBottomSheet(
+        context: context,
+        builder: (ctx) => SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  pickAndUploadImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  pickAndUploadImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Future<void> removeImage(int index) async {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Remove Image'),
+          content: const Text('Are you sure you want to remove this image?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remove', style: TextStyle(color: Colors.red))),
+          ],
+        ),
+      );
+      if (confirm == true) {
+        final newList = List<String>.from(images.value)..removeAt(index);
+        images.value = newList;
+        notifier.updateImages(newList);
+      }
     }
 
     return Scaffold(
@@ -60,7 +118,6 @@ class AddProductStep4ImagesScreen extends HookConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Progress indicator
             Row(
               children: [
                 Text('Step 4 of 5', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
@@ -78,56 +135,70 @@ class AddProductStep4ImagesScreen extends HookConsumerWidget {
             const Text('Add 1–5 images', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             SizedBox(
-              height: 100,
-              child: Stack(
+              height: 120,
+              child: ReorderableListView(
+                scrollDirection: Axis.horizontal,
+                onReorder: (oldIndex, newIndex) {
+                  if (oldIndex < newIndex) newIndex--;
+                  final newList = List<String>.from(images.value);
+                  final item = newList.removeAt(oldIndex);
+                  newList.insert(newIndex, item);
+                  images.value = newList;
+                  notifier.updateImages(newList);
+                },
                 children: [
-                  ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: state.imageUrls.length + 1,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      if (index < state.imageUrls.length) {
-                        final url = state.imageUrls[index];
-                        return Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(url, width: 100, height: 100, fit: BoxFit.cover),
-                            ),
-                            Positioned(
-                              top: 0, right: 0,
-                              child: IconButton(
-                                icon: const Icon(Icons.close, color: Colors.red),
-                                onPressed: () => removeImage(index),
+                  for (int i = 0; i < images.value.length; i++)
+                    Stack(
+                      key: ValueKey(images.value[i]),
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(images.value[i], width: 100, height: 100, fit: BoxFit.cover),
+                        ),
+                        if (uploadProgress.value.length > i && uploadProgress.value[i] < 1.0)
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.black.withOpacity(0.3),
+                              child: Center(
+                                child: CircularProgressIndicator(value: uploadProgress.value[i]),
                               ),
                             ),
-                          ],
-                        );
-                      } else {
-                        return GestureDetector(
-                          onTap: state.imageUrls.length < 5 && !isLoading.value ? pickAndUploadImage : null,
-                          child: Container(
-                            width: 100, height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[900],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: primaryColor, width: 2),
-                            ),
-                            child: isLoading.value
-                              ? const Center(child: CircularProgressIndicator())
-                              : Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.add_a_photo, color: primaryColor, size: 32),
-                                    const SizedBox(height: 4),
-                                    Text('Add', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
                           ),
-                        );
-                      }
-                    },
-                  ),
+                        Positioned(
+                          top: 0, right: 0,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.red),
+                            onPressed: () => removeImage(i),
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (images.value.length < 5)
+                    Container(
+                      key: const ValueKey('add'),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      child: GestureDetector(
+                        onTap: isLoading.value ? null : showImageSourcePicker,
+                        child: Container(
+                          width: 100, height: 100,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[900],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: primaryColor, width: 2),
+                          ),
+                          child: isLoading.value
+                            ? const Center(child: CircularProgressIndicator())
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_a_photo, color: primaryColor, size: 32),
+                                  const SizedBox(height: 4),
+                                  Text('Add', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -146,12 +217,12 @@ class AddProductStep4ImagesScreen extends HookConsumerWidget {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: state.imageUrls.isNotEmpty ? primaryColor : Colors.grey[800],
+                      backgroundColor: images.value.isNotEmpty ? primaryColor : Colors.grey[800],
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    onPressed: state.imageUrls.isNotEmpty && !isLoading.value ? () {
+                    onPressed: images.value.isNotEmpty && !isLoading.value ? () {
                       context.pushNamed('addProductStep5');
                     } : null,
                     child: const Text('Next', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

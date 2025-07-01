@@ -3,6 +3,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_product_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'listing_access_guard.dart';
+import '../../infrastructure/product_repository.dart';
+import '../../domain/product_entity.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 
 class AddProductStep5ReviewAndSubmitScreen extends HookConsumerWidget {
   const AddProductStep5ReviewAndSubmitScreen({Key? key}) : super(key: key);
@@ -10,7 +14,43 @@ class AddProductStep5ReviewAndSubmitScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(addProductProvider);
+    final repo = ref.read(productRepositoryProvider);
     final primaryColor = const Color(0xFF32CD32);
+    final isLoading = useState(false);
+    Future<void> submit() async {
+      isLoading.value = true;
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) throw Exception('Not logged in');
+        final product = ProductEntity(
+          id: '',
+          name: state.title,
+          description: state.description,
+          price: state.price,
+          category: state.category,
+          condition: state.condition,
+          imageUrl: state.imageUrls.isNotEmpty ? state.imageUrls.first : '',
+          sellerId: user.uid,
+          school: '', // TODO: fetch from user profile if needed
+          campus: '', // TODO: fetch from user profile if needed
+          city: '', // TODO: fetch from user profile if needed
+          createdAt: DateTime.now(),
+        );
+        await repo.addProduct(product);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Listing submitted!')),
+          );
+          context.go('/');
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to submit: $e')),
+        );
+      } finally {
+        isLoading.value = false;
+      }
+    }
     return ListingAccessGuard(
       child: Scaffold(
         appBar: AppBar(
@@ -110,33 +150,33 @@ class AddProductStep5ReviewAndSubmitScreen extends HookConsumerWidget {
                 ),
               ),
               const Spacer(),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        context.goNamed('addProductStep4');
-                      },
-                      child: const Text('Back'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+              if (isLoading.value) const Center(child: CircularProgressIndicator()),
+              if (!isLoading.value)
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          context.goNamed('addProductStep4');
+                        },
+                        child: const Text('Back'),
                       ),
-                      onPressed: () {
-                        // TODO: Submit listing
-                      },
-                      child: const Text('Submit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        onPressed: submit,
+                        child: const Text('Submit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
