@@ -256,6 +256,13 @@ class _ProfileCompletionScreenState extends ConsumerState<ProfileCompletionScree
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          AppTextInput(
+            label: 'Student ID Number',
+            controller: _studentIdController,
+            icon: Icons.badge,
+            validator: (v) => v == null || v.isEmpty ? 'Enter your student ID number' : null,
+          ),
+          const SizedBox(height: 16),
           Text(
             'Upload a clear photo of your valid student ID card.\n\nInstructions:\n• The ID must be your own and not expired.\n• All text and your photo must be clearly visible.\n• Take the photo in good lighting, avoid glare and blur.\n• You can take a new photo or upload from your gallery.',
             style: TextStyle(color: AppTheme.primaryColor, fontSize: 14),
@@ -472,6 +479,30 @@ class _ProfileCompletionScreenState extends ConsumerState<ProfileCompletionScree
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
+          if (!_profileComplete)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Please complete the following fields:',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    ..._missingFields.map((f) => Text('• $f', style: const TextStyle(color: Colors.red))),
+                  ],
+                ),
+              ),
+            ),
           AppButton(
             text: 'Go to Home',
             expanded: false,
@@ -508,6 +539,21 @@ class _ProfileCompletionScreenState extends ConsumerState<ProfileCompletionScree
       _dobController.text.isNotEmpty &&
       _gender != null &&
       _profilePhoto != null;
+  }
+
+  // Returns a list of missing required fields for user feedback
+  List<String> get _missingFields {
+    final missing = <String>[];
+    if (_phoneController.text.isEmpty) missing.add('Phone Number');
+    if (_schoolController.text.isEmpty) missing.add('School/University');
+    if (_campusController.text.isEmpty) missing.add('Campus');
+    if (_studentIdController.text.isEmpty) missing.add('Student ID');
+    if (_studentIdPhoto == null) missing.add('Student ID Photo');
+    if (_locationController.text.isEmpty) missing.add('Location');
+    if (_dobController.text.isEmpty) missing.add('Date of Birth');
+    if (_gender == null) missing.add('Gender');
+    if (_profilePhoto == null) missing.add('Profile Photo');
+    return missing;
   }
 
   Future<void> _saveProfile() async {
