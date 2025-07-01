@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_product_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'listing_access_guard.dart';
 
 class AddProductStep3CustomFieldsScreen extends HookConsumerWidget {
   const AddProductStep3CustomFieldsScreen({Key? key}) : super(key: key);
@@ -66,42 +67,44 @@ class AddProductStep3CustomFieldsScreen extends HookConsumerWidget {
         const Text('No custom fields for this category.'),
       ];
     }
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Custom Fields'),
-        leading: BackButton(onPressed: () {
-          context.goNamed('addProductStep2');
-        }),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ...fields,
-            const Spacer(),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      context.goNamed('addProductStep2');
-                    },
-                    child: const Text('Back'),
+    return ListingAccessGuard(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Custom Fields'),
+          leading: BackButton(onPressed: () {
+            context.goNamed('addProductStep2');
+          }),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ...fields,
+              const Spacer(),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        context.goNamed('addProductStep2');
+                      },
+                      child: const Text('Back'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      context.pushNamed('addProductStep4');
-                    },
-                    child: const Text('Next'),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.pushNamed('addProductStep4');
+                      },
+                      child: const Text('Next'),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
