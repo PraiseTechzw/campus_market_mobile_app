@@ -30,15 +30,15 @@ class AddRoomStep2DetailsScreen extends HookConsumerWidget {
       if (!didPrefill.value && userEntity != null) {
         if ((state.school == null || state.school.isEmpty) && ((userEntity.school ?? '').isNotEmpty)) {
           schoolController.text = userEntity.school!;
-          notifier.updateSchool(userEntity.school!);
+          Future.microtask(() => notifier.updateSchool(userEntity.school!));
         }
         if ((state.campus == null || state.campus.isEmpty) && ((userEntity.campus ?? '').isNotEmpty)) {
           campusController.text = userEntity.campus!;
-          notifier.updateCampus(userEntity.campus!);
+          Future.microtask(() => notifier.updateCampus(userEntity.campus!));
         }
         if ((state.city == null || state.city.isEmpty) && ((userEntity.location ?? '').isNotEmpty)) {
           cityController.text = userEntity.location!;
-          notifier.updateCity(userEntity.location!);
+          Future.microtask(() => notifier.updateCity(userEntity.location!));
         }
         didPrefill.value = true;
       }
