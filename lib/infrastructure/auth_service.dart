@@ -38,6 +38,7 @@ class AuthService {
   Future<UserEntity> register({required String name, required String email, required String password, required String role}) async {
     final cred = await _auth.createUserWithEmailAndPassword(email: email, password: password);
     await cred.user!.updateDisplayName(name);
+    await cred.user!.sendEmailVerification();
     final entity = UserEntity(
       uid: cred.user!.uid,
       name: name,
@@ -45,6 +46,12 @@ class AuthService {
       role: role,
       verified: false,
       photoURL: cred.user!.photoURL,
+      phone: null,
+      school: null,
+      campus: null,
+      studentId: null,
+      studentIdPhotoUrl: null,
+      location: null,
     );
     await _firestore.collection('users').doc(cred.user!.uid).set(entity.toMap());
     return entity;
@@ -78,6 +85,12 @@ class AuthService {
         role: 'student',
         verified: false,
         photoURL: user.photoURL,
+        phone: null,
+        school: null,
+        campus: null,
+        studentId: null,
+        studentIdPhotoUrl: null,
+        location: null,
       );
       await _firestore.collection('users').doc(user.uid).set(entity.toMap());
       return entity;
@@ -93,5 +106,11 @@ class AuthService {
   // Password reset
   Future<void> sendPasswordResetEmail(String email) async {
     await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  // Check if current user's email is verified
+  bool isEmailVerified() {
+    final user = _auth.currentUser;
+    return user?.emailVerified ?? false;
   }
 }

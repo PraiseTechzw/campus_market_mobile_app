@@ -86,7 +86,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isOnboarding = state.uri.toString() == '/onboarding';
       final isAuth = ['/login', '/register', '/forgot-password'].contains(state.uri.toString());
       final isProfileCompletion = state.uri.toString() == '/profile-completion';
+      final isVerificationSuccess = state.uri.toString() == '/verification-success';
       final user = userEntityAsync.asData?.value;
+      final authService = ref.read(authServiceProvider);
 
       bool profileIncomplete = false;
       if (user != null) {
@@ -109,20 +111,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
-      // 3. If profile is incomplete, redirect to profile completion (except if already there)
-      if (isLoggedIn && profileIncomplete && !isProfileCompletion) {
+      // 3. If logged in but email is not verified, redirect to verification success screen (except if already there)
+      if (isLoggedIn && !(authService.isEmailVerified()) && !isVerificationSuccess) {
+        return '/verification-success';
+      }
+
+      // 4. If profile is incomplete, redirect to profile completion (except if already there)
+      if (isLoggedIn && authService.isEmailVerified() && profileIncomplete && !isProfileCompletion) {
         return '/profile-completion';
       }
 
-      // 4. If logged in, profile complete, and on onboarding/auth/profile-completion/splash, go to home
-      if (isLoggedIn && !profileIncomplete && (isAuth || isOnboarding || isSplash || isProfileCompletion)) {
+      // 5. If logged in, profile complete, and on onboarding/auth/profile-completion/splash, go to home
+      if (isLoggedIn && authService.isEmailVerified() && !profileIncomplete && (isAuth || isOnboarding || isSplash || isProfileCompletion || isVerificationSuccess)) {
         if (user != null && user.role == 'admin') {
           return '/admin';
         }
         return '/home';
       }
 
-      // 5. Otherwise, no redirect
+      // 6. Otherwise, no redirect
       return null;
     },
   );
