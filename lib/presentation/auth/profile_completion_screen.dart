@@ -112,7 +112,9 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
 
   List<String> get _schoolList {
     if (_selectedCountryCode.code == 'ZW') {
-      return zimbabweSchools.keys.toList();
+      final schools = zimbabweSchools.keys.toList();
+      schools.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      return schools;
     }
     // Add more countries here if needed
     return [];
@@ -183,39 +185,54 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DropdownSearch<String>(
-            items: _schoolList,
-            selectedItem: _schoolController.text.isNotEmpty ? _schoolController.text : null,
-            dropdownSearchDecoration: InputDecoration(
-              labelText: 'School/University',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onChanged: (val) {
-              setState(() {
-                _schoolController.text = val ?? '';
-                _campusController.clear();
-              });
+          Text('School/University', style: TextStyle(fontWeight: FontWeight.w600)),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                child: DropdownButtonFormField<String>(
+                  value: _schoolController.text.isNotEmpty ? _schoolController.text : null,
+                  items: _schoolList.map((school) => DropdownMenuItem(
+                    value: school,
+                    child: Text(school),
+                  )).toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _schoolController.text = val ?? '';
+                      _campusController.clear();
+                    });
+                  },
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'School/University',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Select your school/university' : null,
+                ),
+              );
             },
-            validator: (v) => v == null || v.isEmpty ? 'Select your school/university' : null,
-            popupProps: const PopupProps.menu(showSearchBox: true),
           ),
           const SizedBox(height: 16),
-          DropdownSearch<String>(
-            items: _campusList,
-            selectedItem: _campusController.text.isNotEmpty ? _campusController.text : null,
-            dropdownSearchDecoration: InputDecoration(
-              labelText: 'Campus',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          Text('Campus', style: TextStyle(fontWeight: FontWeight.w600)),
+          DropdownButtonFormField<String>(
+            value: _campusController.text.isNotEmpty ? _campusController.text : null,
+            items: _campusList.map((campus) => DropdownMenuItem(
+              
+              value: campus,
+              child: Text(campus),
+            )).toList(),
             onChanged: (val) {
               setState(() {
                 _campusController.text = val ?? '';
-                // Update location field automatically
                 _locationController.text = val ?? '';
               });
             },
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Campus',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             validator: (v) => v == null || v.isEmpty ? 'Select your campus' : null,
-            popupProps: const PopupProps.menu(showSearchBox: true),
           ),
           const SizedBox(height: 8),
           Text('Schools and campuses update based on your country and school selection.', style: TextStyle(color: Colors.grey[700], fontSize: 12)),
@@ -228,35 +245,91 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppTextInput(label: 'Student ID Number', controller: _studentIdController, icon: Icons.badge, validator: (v) => v == null || v.isEmpty ? 'Enter student ID' : null),
-          const SizedBox(height: 16),
+          Text(
+            'Upload a clear photo of your valid student ID card.\n\nInstructions:\n• The ID must be your own and not expired.\n• All text and your photo must be clearly visible.\n• Take the photo in good lighting, avoid glare and blur.\n• You can take a new photo or upload from your gallery.',
+            style: TextStyle(color: Colors.black87, fontSize: 14),
+          ),
+          const SizedBox(height: 12),
+          if (_studentIdPhoto != null)
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  File(_studentIdPhoto!.path),
+                  width: 180,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               ElevatedButton.icon(
                 icon: const Icon(Icons.upload_file),
-                label: const Text('Upload Student ID Photo'),
+                label: const Text('Upload/Take Student ID Photo'),
                 onPressed: () async {
-                  final picked = await _picker.pickImage(source: ImageSource.gallery);
-                  if (picked != null) setState(() => _studentIdPhoto = picked);
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (context) => SafeArea(
+                      child: Wrap(
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.camera_alt),
+                            title: const Text('Take Photo'),
+                            onTap: () async {
+                              Navigator.pop(context);
+                              final picked = await _picker.pickImage(source: ImageSource.camera, imageQuality: 90);
+                              if (picked != null) setState(() => _studentIdPhoto = picked);
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.photo_library),
+                            title: const Text('Choose from Gallery'),
+                            onTap: () async {
+                              Navigator.pop(context);
+                              final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+                              if (picked != null) setState(() => _studentIdPhoto = picked);
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.info_outline),
+                            title: const Text('Photo Tips'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Tips for a Good Student ID Photo'),
+                                  content: const Text(
+                                    '• Place your ID on a flat surface in good light.\n'
+                                    '• Make sure all corners are visible.\n'
+                                    '• Avoid glare, shadows, and blur.\n'
+                                    '• Check that your name, photo, and ID number are readable.'
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 },
               ),
-              const SizedBox(width: 12),
-              if (_studentIdPhoto != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                    File(_studentIdPhoto!.path),
-                    width: 48,
-                    height: 48,
-                    fit: BoxFit.cover,
-                  ),
-                ),
             ],
           ),
           if (_studentIdPhoto == null)
             const Padding(
               padding: EdgeInsets.only(top: 8),
-              child: Text('Please upload your student ID photo.', style: TextStyle(color: Colors.red)),
+              child: Text('Please upload a clear photo of your student ID.', style: TextStyle(color: Colors.red)),
             ),
         ],
       ),
@@ -269,47 +342,93 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
     ),
     Step(
       title: const Text('Profile & Bio'),
-      content: Column(
-        children: [
-          Row(
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.photo_camera),
-                label: const Text('Upload Profile Photo'),
-                onPressed: () async {
-                  final picked = await _picker.pickImage(source: ImageSource.gallery);
-                  if (picked != null) setState(() => _profilePhoto = picked);
-                },
-              ),
-              const SizedBox(width: 12),
-              if (_profilePhoto != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                    File(_profilePhoto!.path),
-                    width: 48,
-                    height: 48,
-                    fit: BoxFit.cover,
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add your profile photo, date of birth, gender, and a short bio.\n\nYou must be at least 18 years old to use this app.',
+              style: TextStyle(color: Colors.black87, fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  CircleAvatar(
+                    radius: 48,
+                    backgroundColor: Colors.grey[200],
+                    backgroundImage: _profilePhoto != null ? FileImage(File(_profilePhoto!.path)) : null,
+                    child: _profilePhoto == null
+                        ? const Icon(Icons.person, size: 64, color: Colors.grey)
+                        : null,
                   ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () async {
+                        final picked = await _picker.pickImage(source: ImageSource.gallery);
+                        if (picked != null) setState(() => _profilePhoto = picked);
+                      },
+                      child: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppTheme.primaryColor,
+                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            GestureDetector(
+              onTap: () async {
+                final now = DateTime.now();
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime(now.year - 18, now.month, now.day),
+                  firstDate: DateTime(1900),
+                  lastDate: DateTime(now.year - 18, now.month, now.day),
+                  helpText: 'Select your date of birth (18+ only)',
+                );
+                if (picked != null) {
+                  _dobController.text = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+                  setState(() {});
+                }
+              },
+              child: AbsorbPointer(
+                child: AppTextInput(
+                  label: 'Date of Birth (18+)',
+                  controller: _dobController,
+                  icon: Icons.cake,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Select your date of birth';
+                    final dob = DateTime.tryParse(v);
+                    if (dob == null) return 'Invalid date';
+                    final now = DateTime.now();
+                    final age = now.year - dob.year - ((now.month < dob.month || (now.month == dob.month && now.day < dob.day)) ? 1 : 0);
+                    if (age < 18) return 'You must be at least 18 years old';
+                    return null;
+                  },
                 ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          AppTextInput(label: 'Date of Birth', controller: _dobController, icon: Icons.cake),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _gender,
-            items: const [
-              DropdownMenuItem(value: 'male', child: Text('Male')),
-              DropdownMenuItem(value: 'female', child: Text('Female')),
-              DropdownMenuItem(value: 'other', child: Text('Other')),
-            ],
-            onChanged: (v) => setState(() => _gender = v),
-            decoration: const InputDecoration(labelText: 'Gender'),
-          ),
-          const SizedBox(height: 16),
-          AppTextInput(label: 'Bio (optional)', controller: _bioController, icon: Icons.info_outline),
-        ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _gender,
+              items: const [
+                DropdownMenuItem(value: 'male', child: Text('Male')),
+                DropdownMenuItem(value: 'female', child: Text('Female')),
+                DropdownMenuItem(value: 'other', child: Text('Other')),
+              ],
+              onChanged: (v) => setState(() => _gender = v),
+              decoration: const InputDecoration(labelText: 'Gender'),
+            ),
+            const SizedBox(height: 16),
+            AppTextInput(label: 'Bio (optional)', controller: _bioController, icon: Icons.info_outline),
+          ],
+        ),
       ),
       isActive: _currentStep >= 4,
     ),
