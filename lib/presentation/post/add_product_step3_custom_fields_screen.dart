@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_product_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class AddProductStep3CustomFieldsScreen extends HookConsumerWidget {
   const AddProductStep3CustomFieldsScreen({Key? key}) : super(key: key);
@@ -69,7 +70,7 @@ class AddProductStep3CustomFieldsScreen extends HookConsumerWidget {
       appBar: AppBar(
         title: const Text('Custom Fields'),
         leading: BackButton(onPressed: () {
-          // TODO: Go back to previous step
+          context.goNamed('addProductStep2');
         }),
       ),
       body: Padding(
@@ -84,7 +85,7 @@ class AddProductStep3CustomFieldsScreen extends HookConsumerWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      // TODO: Go back
+                      context.goNamed('addProductStep2');
                     },
                     child: const Text('Back'),
                   ),
@@ -93,7 +94,7 @@ class AddProductStep3CustomFieldsScreen extends HookConsumerWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // TODO: Go to next step
+                      context.pushNamed('addProductStep4');
                     },
                     child: const Text('Next'),
                   ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../application/add_product_provider.dart';
 
 class AddProductStep1CategoryScreen extends HookConsumerWidget {
@@ -56,7 +57,7 @@ class AddProductStep1CategoryScreen extends HookConsumerWidget {
               child: ElevatedButton(
                 onPressed: state.type.isNotEmpty && state.category.isNotEmpty
                     ? () {
-                        // TODO: Go to next step
+                        context.pushNamed('addProductStep2');
                       }
                     : null,
                 child: const Text('Next'),

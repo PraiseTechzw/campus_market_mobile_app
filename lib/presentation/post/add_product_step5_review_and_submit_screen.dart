@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_product_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class AddProductStep5ReviewAndSubmitScreen extends HookConsumerWidget {
   const AddProductStep5ReviewAndSubmitScreen({Key? key}) : super(key: key);
@@ -12,7 +13,7 @@ class AddProductStep5ReviewAndSubmitScreen extends HookConsumerWidget {
       appBar: AppBar(
         title: const Text('Review & Submit'),
         leading: BackButton(onPressed: () {
-          // TODO: Go back to previous step
+          context.goNamed('addProductStep4');
         }),
       ),
       body: Padding(
@@ -36,7 +37,7 @@ class AddProductStep5ReviewAndSubmitScreen extends HookConsumerWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      // TODO: Go back
+                      context.goNamed('addProductStep4');
                     },
                     child: const Text('Back'),
                   ),

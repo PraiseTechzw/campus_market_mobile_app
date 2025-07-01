@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_product_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class AddProductStep2DetailsScreen extends HookConsumerWidget {
   const AddProductStep2DetailsScreen({Key? key}) : super(key: key);
@@ -18,7 +19,7 @@ class AddProductStep2DetailsScreen extends HookConsumerWidget {
       appBar: AppBar(
         title: const Text('Product Details'),
         leading: BackButton(onPressed: () {
-          // TODO: Go back to previous step
+          context.goNamed('addProductStep1');
         }),
       ),
       body: Padding(
@@ -61,7 +62,7 @@ class AddProductStep2DetailsScreen extends HookConsumerWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: isValid ? () {
-                  // TODO: Go to next step
+                  context.pushNamed('addProductStep3');
                 } : null,
                 child: const Text('Next'),
               ),

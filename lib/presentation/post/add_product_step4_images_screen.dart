@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_product_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class AddProductStep4ImagesScreen extends HookConsumerWidget {
   const AddProductStep4ImagesScreen({Key? key}) : super(key: key);
@@ -14,7 +15,7 @@ class AddProductStep4ImagesScreen extends HookConsumerWidget {
       appBar: AppBar(
         title: const Text('Upload Images'),
         leading: BackButton(onPressed: () {
-          // TODO: Go back to previous step
+          context.goNamed('addProductStep3');
         }),
       ),
       body: Padding(
@@ -68,7 +69,7 @@ class AddProductStep4ImagesScreen extends HookConsumerWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      // TODO: Go back
+                      context.goNamed('addProductStep3');
                     },
                     child: const Text('Back'),
                   ),
@@ -77,7 +78,7 @@ class AddProductStep4ImagesScreen extends HookConsumerWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: state.imageUrls.isNotEmpty ? () {
-                      // TODO: Go to next step
+                      context.pushNamed('addProductStep5');
                     } : null,
                     child: const Text('Next'),
                   ),
