@@ -18,6 +18,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../marketplace/product_detail_screen.dart';
 import '../../domain/product_entity.dart';
 import '../marketplace/search_results_screen.dart';
+import '../post/add_product_step1_category_screen.dart';
+import '../post/add_product_step2_details_screen.dart';
+import '../post/add_product_step3_custom_fields_screen.dart';
+import '../post/add_product_step4_images_screen.dart';
+import '../post/add_product_step5_review_and_submit_screen.dart';
+import '../post/add_room_step1_type_screen.dart';
+import '../post/add_room_step2_details_screen.dart';
+import '../post/add_room_step3_images_screen.dart';
+import '../post/add_room_step4_review_and_submit_screen.dart';
 
 // Custom ChangeNotifier to bridge a Stream to Listenable for go_router
 class StreamChangeNotifier extends ChangeNotifier {
@@ -101,6 +110,51 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final query = state.extra as String? ?? '';
           return SearchResultsScreen(initialQuery: query);
         },
+      ),
+      GoRoute(
+        path: '/post/add-product/step1',
+        name: 'addProductStep1',
+        builder: (context, state) => const AddProductStep1CategoryScreen(),
+      ),
+      GoRoute(
+        path: '/post/add-product/step2',
+        name: 'addProductStep2',
+        builder: (context, state) => const AddProductStep2DetailsScreen(),
+      ),
+      GoRoute(
+        path: '/post/add-product/step3',
+        name: 'addProductStep3',
+        builder: (context, state) => const AddProductStep3CustomFieldsScreen(),
+      ),
+      GoRoute(
+        path: '/post/add-product/step4',
+        name: 'addProductStep4',
+        builder: (context, state) => const AddProductStep4ImagesScreen(),
+      ),
+      GoRoute(
+        path: '/post/add-product/step5',
+        name: 'addProductStep5',
+        builder: (context, state) => const AddProductStep5ReviewAndSubmitScreen(),
+      ),
+      GoRoute(
+        path: '/post/add-room/step1',
+        name: 'addRoomStep1',
+        builder: (context, state) => const AddRoomStep1TypeScreen(),
+      ),
+      GoRoute(
+        path: '/post/add-room/step2',
+        name: 'addRoomStep2',
+        builder: (context, state) => const AddRoomStep2DetailsScreen(),
+      ),
+      GoRoute(
+        path: '/post/add-room/step3',
+        name: 'addRoomStep3',
+        builder: (context, state) => const AddRoomStep3ImagesScreen(),
+      ),
+      GoRoute(
+        path: '/post/add-room/step4',
+        name: 'addRoomStep4',
+        builder: (context, state) => const AddRoomStep4ReviewAndSubmitScreen(),
       ),
     ],
     redirect: (context, state) {

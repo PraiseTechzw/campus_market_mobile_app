@@ -29,16 +29,7 @@ class ProductFeedScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
-      floatingActionButton: AppButton(
-        text: 'Add Product',
-        icon: Icons.add,
-        expanded: false,
-        onPressed: () {
-          // TODO: Navigate to add product form
-        },
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-    );
+      );
   }
 }
 
@@ -50,10 +41,10 @@ class ProductListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       child: ListTile(
-        leading: product.images.isNotEmpty
+        leading: product.imageUrl.isNotEmpty
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(product.images.first, width: 56, height: 56, fit: BoxFit.cover),
+                child: Image.network(product.imageUrl, width: 56, height: 56, fit: BoxFit.cover),
               )
             : Container(
                 width: 56,
@@ -64,7 +55,7 @@ class ProductListTile extends StatelessWidget {
                 ),
                 child: const Icon(Icons.image, color: Colors.grey),
               ),
-        title: Text(product.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('USD ${product.price.toStringAsFixed(2)}'),
         onTap: () {
           // TODO: Navigate to product details

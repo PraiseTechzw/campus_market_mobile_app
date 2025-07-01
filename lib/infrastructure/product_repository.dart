@@ -66,7 +66,7 @@ class ProductRepository {
       final firestore = FirebaseFirestore.instance;
       final filtered = <ProductEntity>[];
       for (final product in products) {
-        final userDoc = await firestore.collection('users').doc(product.userId).get();
+        final userDoc = await firestore.collection('users').doc(product.sellerId).get();
         final data = userDoc.data();
         if (userDoc.exists && data is Map<String, dynamic>) {
           final map = data as Map<String, dynamic>;
