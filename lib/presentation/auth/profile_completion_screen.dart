@@ -28,7 +28,8 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   String? _gender;
   XFile? _profilePhoto;
   final _bioController = TextEditingController();
- 
+  
+  bool _isSaving = false;
 
   final _picker = ImagePicker();
 
@@ -128,52 +129,61 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   List<Step> get _steps => [
     Step(
       title: const Text('Basic Info'),
-      content: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppTextInput(label: 'Full Name', controller: TextEditingController(text: widget.name)),
-          const SizedBox(height: 16),
-          AppTextInput(label: 'Email', controller: TextEditingController(text: widget.email)),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              CountryCodePicker(
-                onChanged: (code) {
-                  setState(() {
-                    _selectedCountryCode = code;
-                    _schoolController.clear();
-                    _campusController.clear();
-                  });
-                },
-                initialSelection: 'ZW',
-                favorite: const ['+263', 'ZW'],
-                showCountryOnly: false,
-                showOnlyCountryWhenClosed: false,
-                alignLeft: false,
-                textStyle: Theme.of(context).textTheme.bodyMedium,
+      content: Builder(
+        builder: (context) {
+          final maxHeight = MediaQuery.of(context).size.height * 0.6;
+          return ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppTextInput(label: 'Full Name', controller: TextEditingController(text: widget.name)),
+                  const SizedBox(height: 16),
+                  AppTextInput(label: 'Email', controller: TextEditingController(text: widget.email)),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      CountryCodePicker(
+                        onChanged: (code) {
+                          setState(() {
+                            _selectedCountryCode = code;
+                            _schoolController.clear();
+                            _campusController.clear();
+                          });
+                        },
+                        initialSelection: 'ZW',
+                        favorite: const ['+263', 'ZW'],
+                        showCountryOnly: false,
+                        showOnlyCountryWhenClosed: false,
+                        alignLeft: false,
+                        textStyle: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: AppTextInput(
+                          label: 'Phone Number',
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          icon: Icons.phone,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Enter phone number';
+                            if (_selectedCountryCode.code == 'ZW' && !RegExp(r'^(7|1)\d{8}').hasMatch(v)) {
+                              return 'Enter a valid Zimbabwean phone number';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Include your country code. Zimbabwe is default.', style: TextStyle(color: AppTheme.primaryColor , fontSize: 12)),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: AppTextInput(
-                  label: 'Phone Number',
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  icon: Icons.phone,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Enter phone number';
-                    // Zimbabwe phone validation: 9 digits, starts with 7 or 1
-                    if (_selectedCountryCode.code == 'ZW' && !RegExp(r'^(7|1)\d{8}').hasMatch(v)) {
-                      return 'Enter a valid Zimbabwean phone number';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text('Include your country code. Zimbabwe is default.', style: TextStyle(color: AppTheme.primaryColor , fontSize: 12)),
-        ],
+            ),
+          );
+        },
       ),
       isActive: _currentStep >= 0,
     ),
@@ -465,11 +475,6 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                 ? () => Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false)
                 : null,
           ),
-          if (!_profileComplete)
-            const Padding(
-              padding: EdgeInsets.only(top: 12),
-              child: Text('Please complete all required fields before continuing.', style: TextStyle(color: Colors.red)),
-            ),
         ],
       ),
       isActive: _currentStep >= 5,
@@ -495,7 +500,32 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
       _campusController.text.isNotEmpty &&
       _studentIdController.text.isNotEmpty &&
       _studentIdPhoto != null &&
-      _locationController.text.isNotEmpty;
+      _locationController.text.isNotEmpty &&
+      _dobController.text.isNotEmpty &&
+      _gender != null &&
+      _profilePhoto != null;
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_profileComplete) return;
+    setState(() => _isSaving = true);
+    try {
+      // Simulate save delay. Replace with actual save logic.
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile saved successfully!')),
+      );
+      await Future.delayed(const Duration(milliseconds: 500));
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save profile: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -533,28 +563,56 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 400),
-                    child: Stepper(
-                      key: ValueKey(_currentStep),
-                      currentStep: _currentStep,
-                      onStepContinue: _continue,
-                      onStepCancel: _cancel,
-                      steps: _steps,
-                      controlsBuilder: (BuildContext context, ControlsDetails details) {
-                        return Row(
-                          children: [
-                            AppButton(
-                              text: _currentStep == _steps.length - 1 ? 'Finish' : 'Next',
-                              expanded: false,
-                              onPressed: details.onStepContinue,
+                    child: Stack(
+                      children: [
+                        Stepper(
+                          key: ValueKey(_currentStep),
+                          currentStep: _currentStep,
+                          onStepContinue: _currentStep == _steps.length - 1
+                              ? null // handled in controlsBuilder
+                              : _continue,
+                          onStepCancel: _cancel,
+                          steps: _steps,
+                          controlsBuilder: (BuildContext context, ControlsDetails details) {
+                            final isLast = _currentStep == _steps.length - 1;
+                            return Row(
+                              children: [
+                                AppButton(
+                                  text: isLast
+                                      ? (_isSaving
+                                          ? 'Saving...'
+                                          : 'Finish')
+                                      : 'Next',
+                                  expanded: false,
+                                  onPressed: isLast
+                                      ? (_profileComplete && !_isSaving ? _saveProfile : null)
+                                      : details.onStepContinue,
+                                ),
+                                if (_isSaving && isLast)
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 12),
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
+                                    ),
+                                  ),
+                                if (_currentStep > 0)
+                                  TextButton(
+                                    onPressed: details.onStepCancel,
+                                    child: const Text('Back'),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                        if (_isSaving)
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.black.withOpacity(0.1),
                             ),
-                            if (_currentStep > 0)
-                              TextButton(
-                                onPressed: details.onStepCancel,
-                                child: const Text('Back'),
-                              ),
-                          ],
-                        );
-                      },
+                          ),
+                      ],
                     ),
                   ),
                 ),
