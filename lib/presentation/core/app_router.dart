@@ -17,6 +17,7 @@ import 'splash_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../marketplace/product_detail_screen.dart';
 import '../../domain/product_entity.dart';
+import '../marketplace/search_results_screen.dart';
 
 // Custom ChangeNotifier to bridge a Stream to Listenable for go_router
 class StreamChangeNotifier extends ChangeNotifier {
@@ -92,6 +93,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             return const Scaffold(body: Center(child: Text('Product not found')));
           }
           return ProductDetailScreen(product: product);
+        },
+      ),
+      GoRoute(
+        path: '/search',
+        builder: (context, state) {
+          final query = state.extra as String? ?? '';
+          return SearchResultsScreen(initialQuery: query);
         },
       ),
     ],
