@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_room_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class AddRoomStep3ImagesScreen extends HookConsumerWidget {
   const AddRoomStep3ImagesScreen({Key? key}) : super(key: key);
@@ -14,7 +15,7 @@ class AddRoomStep3ImagesScreen extends HookConsumerWidget {
       appBar: AppBar(
         title: const Text('Room Images'),
         leading: BackButton(onPressed: () {
-          // TODO: Go back to previous step
+          context.goNamed('addRoomStep2');
         }),
       ),
       body: Padding(
@@ -68,7 +69,7 @@ class AddRoomStep3ImagesScreen extends HookConsumerWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      // TODO: Go back
+                      context.goNamed('addRoomStep2');
                     },
                     child: const Text('Back'),
                   ),
@@ -77,7 +78,7 @@ class AddRoomStep3ImagesScreen extends HookConsumerWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: state.imageUrls.length >= 3 ? () {
-                      // TODO: Go to next step
+                      context.pushNamed('addRoomStep4');
                     } : null,
                     child: const Text('Next'),
                   ),

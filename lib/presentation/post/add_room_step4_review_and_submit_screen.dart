@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/add_room_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class AddRoomStep4ReviewAndSubmitScreen extends HookConsumerWidget {
   const AddRoomStep4ReviewAndSubmitScreen({Key? key}) : super(key: key);
@@ -12,7 +13,7 @@ class AddRoomStep4ReviewAndSubmitScreen extends HookConsumerWidget {
       appBar: AppBar(
         title: const Text('Review & Submit'),
         leading: BackButton(onPressed: () {
-          // TODO: Go back to previous step
+          context.goNamed('addRoomStep3');
         }),
       ),
       body: Padding(
@@ -37,7 +38,7 @@ class AddRoomStep4ReviewAndSubmitScreen extends HookConsumerWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      // TODO: Go back
+                      context.goNamed('addRoomStep3');
                     },
                     child: const Text('Back'),
                   ),
