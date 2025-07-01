@@ -2,20 +2,30 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProductEntity {
   final String id;
-  final String title;
+  final String name;
   final String description;
-  final List<String> images;
   final double price;
-  final String userId;
+  final String category;
+  final String condition; // New/Used
+  final String imageUrl;
+  final String sellerId;
+  final String school;
+  final String campus;
+  final String city;
   final DateTime createdAt;
 
   ProductEntity({
     required this.id,
-    required this.title,
+    required this.name,
     required this.description,
-    required this.images,
     required this.price,
-    required this.userId,
+    required this.category,
+    required this.condition,
+    required this.imageUrl,
+    required this.sellerId,
+    required this.school,
+    required this.campus,
+    required this.city,
     required this.createdAt,
   });
 
@@ -31,22 +41,32 @@ class ProductEntity {
     }
     return ProductEntity(
       id: id,
-      title: map['title'] ?? '',
+      name: map['name'] ?? '',
       description: map['description'] ?? '',
-      images: List<String>.from(map['images'] ?? []),
       price: (map['price'] ?? 0).toDouble(),
-      userId: map['userId'] ?? '',
+      category: map['category'] ?? '',
+      condition: map['condition'] ?? '',
+      imageUrl: map['imageUrl'] ?? '',
+      sellerId: map['sellerId'] ?? '',
+      school: map['school'] ?? '',
+      campus: map['campus'] ?? '',
+      city: map['city'] ?? '',
       createdAt: createdAt,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'title': title,
+      'name': name,
       'description': description,
-      'images': images,
       'price': price,
-      'userId': userId,
+      'category': category,
+      'condition': condition,
+      'imageUrl': imageUrl,
+      'sellerId': sellerId,
+      'school': school,
+      'campus': campus,
+      'city': city,
       'createdAt': createdAt,
     };
   }

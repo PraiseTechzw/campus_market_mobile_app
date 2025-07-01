@@ -15,4 +15,15 @@ final productDetailProvider = FutureProvider.family<ProductEntity?, String>((ref
 // Provider for adding a product
 final addProductProvider = FutureProvider.family<void, ProductEntity>((ref, product) async {
   await ref.watch(productRepositoryProvider).addProduct(product);
+});
+
+// Provider for filtered product list stream
+final filteredProductListProvider = StreamProvider.autoDispose.family<List<ProductEntity>, Map<String, String?>>((ref, filters) {
+  final repo = ref.watch(productRepositoryProvider);
+  return repo.fetchFilteredProducts(
+    school: filters['school'],
+    campus: filters['campus'],
+    city: filters['city'],
+    category: filters['category'],
+  );
 }); 
