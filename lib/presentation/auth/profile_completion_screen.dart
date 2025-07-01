@@ -530,6 +530,19 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                   minHeight: 6,
                 ),
                 const SizedBox(height: 20),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    child: Stepper(
+                      key: ValueKey(_currentStep),
+                      currentStep: _currentStep,
+                      onStepContinue: _continue,
+                      onStepCancel: _cancel,
+                      steps: _steps,
+                      controlsBuilder: (BuildContext context, ControlsDetails details) {
+                        return Row(
+                          children: [
+                            AppButton(
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 400),
                   child: Stepper(
