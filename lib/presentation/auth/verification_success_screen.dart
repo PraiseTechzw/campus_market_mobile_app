@@ -8,11 +8,11 @@ class VerificationSuccessScreen extends StatelessWidget {
   final VoidCallback onButtonPressed;
 
   const VerificationSuccessScreen({
-    Key? key,
+    super.key,
     required this.message,
     required this.buttonText,
     required this.onButtonPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

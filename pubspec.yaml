@@ -56,6 +56,9 @@ dependencies:
   json_annotation: ^4.8.1
   shared_preferences: ^2.2.2
   image_picker: ^1.0.7
+  country_code_picker: ^3.3.0
+  dropdown_search: ^6.0.2
+  phonecodes: ^0.0.4
 
 dev_dependencies:
   flutter_test:

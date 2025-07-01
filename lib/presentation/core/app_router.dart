@@ -1,3 +1,4 @@
+import 'package:campus_market/presentation/auth/verification_success_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -13,6 +14,7 @@ import '../home/home_screen.dart';
 import '../admin/admin_dashboard_screen.dart';
 import '../auth/profile_completion_screen.dart';
 import 'splash_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Custom ChangeNotifier to bridge a Stream to Listenable for go_router
 class StreamChangeNotifier extends ChangeNotifier {
@@ -67,6 +69,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AdminDashboardScreen(),
       ),
       GoRoute(
+        path: '/verification-success',
+        builder: (context, state) => _VerificationSuccessWrapper(),
+      ),
+      GoRoute(
         path: '/profile-completion',
         builder: (context, state) {
           final userEntity = ref.read(userEntityProvider).asData?.value;
@@ -81,7 +87,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final onboardingComplete = ref.read(onboardingCompleteProvider);
       final userAsync = ref.read(firebaseUserProvider);
       final userEntityAsync = ref.read(userEntityProvider);
+
       final isLoggedIn = userAsync.asData?.value != null;
+
+      // Only wait for userEntityProvider if logged in
+      if (isLoggedIn && userEntityAsync.isLoading) {
+        return null;
+      }
+
       final isSplash = state.uri.toString() == '/splash';
       final isOnboarding = state.uri.toString() == '/onboarding';
       final isAuth = ['/login', '/register', '/forgot-password'].contains(state.uri.toString());
@@ -134,3 +147,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
   );
 });
+
+class _VerificationSuccessWrapper extends StatefulWidget {
+  @override
+  State<_VerificationSuccessWrapper> createState() => _VerificationSuccessWrapperState();
+}
+
+class _VerificationSuccessWrapperState extends State<_VerificationSuccessWrapper> {
+  bool _loading = false;
+  String? _error;
+
+  Future<void> _reloadAndCheck() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      await FirebaseAuth.instance.currentUser?.reload();
+      // This will trigger the router to re-evaluate
+      setState(() {});
+    } catch (e) {
+      setState(() { _error = 'Could not refresh. Please try again.'; });
+    } finally {
+      setState(() { _loading = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VerificationSuccessScreen(
+      message: "A verification email has been sent to your email address. Please check your inbox and verify your email to continue.",
+      buttonText: _loading ? "Checking..." : "I've Verified My Email",
+      onButtonPressed: _loading ? () {} : () { _reloadAndCheck(); },
+    );
+  }
+}

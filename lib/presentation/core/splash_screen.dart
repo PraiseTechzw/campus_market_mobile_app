@@ -22,7 +22,7 @@ class SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             Text(
-              'CampusMarket',
+              'Campus Market',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: AppTheme.primaryColor,
                     fontWeight: FontWeight.bold,
