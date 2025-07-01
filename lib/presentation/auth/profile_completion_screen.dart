@@ -5,8 +5,6 @@ import '../core/components/app_text_input.dart';
 import '../core/components/app_button.dart';
 import 'dart:io';
 import 'package:country_code_picker/country_code_picker.dart';
-import 'package:dropdown_search/dropdown_search.dart';
-import 'package:phonecodes/phonecodes.dart';
 
 class ProfileCompletionScreen extends StatefulWidget {
   final String email;
@@ -30,8 +28,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   String? _gender;
   XFile? _profilePhoto;
   final _bioController = TextEditingController();
-  bool _loading = false;
-  String? _error;
+ 
 
   final _picker = ImagePicker();
 
@@ -175,7 +172,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text('Include your country code. Zimbabwe is default.', style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+          Text('Include your country code. Zimbabwe is default.', style: TextStyle(color: AppTheme.primaryColor , fontSize: 12)),
         ],
       ),
       isActive: _currentStep >= 0,
@@ -235,7 +232,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
             validator: (v) => v == null || v.isEmpty ? 'Select your campus' : null,
           ),
           const SizedBox(height: 8),
-          Text('Schools and campuses update based on your country and school selection.', style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+          Text('Schools and campuses update based on your country and school selection.', style: TextStyle(color: AppTheme.primaryColor, fontSize: 12)),
         ],
       ),
       isActive: _currentStep >= 1,
@@ -247,7 +244,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
         children: [
           Text(
             'Upload a clear photo of your valid student ID card.\n\nInstructions:\n• The ID must be your own and not expired.\n• All text and your photo must be clearly visible.\n• Take the photo in good lighting, avoid glare and blur.\n• You can take a new photo or upload from your gallery.',
-            style: TextStyle(color: Colors.black87, fontSize: 14),
+            style: TextStyle(color: AppTheme.primaryColor, fontSize: 14),
           ),
           const SizedBox(height: 12),
           if (_studentIdPhoto != null)
@@ -342,93 +339,101 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
     ),
     Step(
       title: const Text('Profile & Bio'),
-      content: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Add your profile photo, date of birth, gender, and a short bio.\n\nYou must be at least 18 years old to use this app.',
-              style: TextStyle(color: Colors.black87, fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: Stack(
-                alignment: Alignment.bottomRight,
+      content: Builder(
+        builder: (context) {
+          final maxHeight = MediaQuery.of(context).size.height * 0.6;
+          return ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 48,
-                    backgroundColor: Colors.grey[200],
-                    backgroundImage: _profilePhoto != null ? FileImage(File(_profilePhoto!.path)) : null,
-                    child: _profilePhoto == null
-                        ? const Icon(Icons.person, size: 64, color: Colors.grey)
-                        : null,
+                  Text(
+                    'Add your profile photo, date of birth, gender, and a short bio.\n\nYou must be at least 18 years old to use this app.',
+                    style: TextStyle(color: AppTheme.primaryColor, fontSize: 14),
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: () async {
-                        final picked = await _picker.pickImage(source: ImageSource.gallery);
-                        if (picked != null) setState(() => _profilePhoto = picked);
-                      },
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppTheme.primaryColor,
-                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 48,
+                          backgroundColor: Colors.grey[200],
+                          backgroundImage: _profilePhoto != null ? FileImage(File(_profilePhoto!.path)) : null,
+                          child: _profilePhoto == null
+                              ? const Icon(Icons.person, size: 64, color: Colors.grey)
+                              : null,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () async {
+                              final picked = await _picker.pickImage(source: ImageSource.gallery);
+                              if (picked != null) setState(() => _profilePhoto = picked);
+                            },
+                            child: CircleAvatar(
+                              radius: 18,
+                              backgroundColor: AppTheme.primaryColor,
+                              child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  GestureDetector(
+                    onTap: () async {
+                      final now = DateTime.now();
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime(now.year - 18, now.month, now.day),
+                        firstDate: DateTime(1900),
+                        lastDate: DateTime(now.year - 18, now.month, now.day),
+                        helpText: 'Select your date of birth (18+ only)',
+                      );
+                      if (picked != null) {
+                        _dobController.text = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+                        setState(() {});
+                      }
+                    },
+                    child: AbsorbPointer(
+                      child: AppTextInput(
+                        label: 'Date of Birth (18+)',
+                        controller: _dobController,
+                        icon: Icons.cake,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Select your date of birth';
+                          final dob = DateTime.tryParse(v);
+                          if (dob == null) return 'Invalid date';
+                          final now = DateTime.now();
+                          final age = now.year - dob.year - ((now.month < dob.month || (now.month == dob.month && now.day < dob.day)) ? 1 : 0);
+                          if (age < 18) return 'You must be at least 18 years old';
+                          return null;
+                        },
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _gender,
+                    items: const [
+                      DropdownMenuItem(value: 'male', child: Text('Male')),
+                      DropdownMenuItem(value: 'female', child: Text('Female')),
+                      DropdownMenuItem(value: 'other', child: Text('Other')),
+                    ],
+                    onChanged: (v) => setState(() => _gender = v),
+                    decoration: const InputDecoration(labelText: 'Gender'),
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextInput(label: 'Bio (optional)', controller: _bioController, icon: Icons.info_outline),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            GestureDetector(
-              onTap: () async {
-                final now = DateTime.now();
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime(now.year - 18, now.month, now.day),
-                  firstDate: DateTime(1900),
-                  lastDate: DateTime(now.year - 18, now.month, now.day),
-                  helpText: 'Select your date of birth (18+ only)',
-                );
-                if (picked != null) {
-                  _dobController.text = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-                  setState(() {});
-                }
-              },
-              child: AbsorbPointer(
-                child: AppTextInput(
-                  label: 'Date of Birth (18+)',
-                  controller: _dobController,
-                  icon: Icons.cake,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Select your date of birth';
-                    final dob = DateTime.tryParse(v);
-                    if (dob == null) return 'Invalid date';
-                    final now = DateTime.now();
-                    final age = now.year - dob.year - ((now.month < dob.month || (now.month == dob.month && now.day < dob.day)) ? 1 : 0);
-                    if (age < 18) return 'You must be at least 18 years old';
-                    return null;
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _gender,
-              items: const [
-                DropdownMenuItem(value: 'male', child: Text('Male')),
-                DropdownMenuItem(value: 'female', child: Text('Female')),
-                DropdownMenuItem(value: 'other', child: Text('Other')),
-              ],
-              onChanged: (v) => setState(() => _gender = v),
-              decoration: const InputDecoration(labelText: 'Gender'),
-            ),
-            const SizedBox(height: 16),
-            AppTextInput(label: 'Bio (optional)', controller: _bioController, icon: Icons.info_outline),
-          ],
-        ),
+          );
+        },
       ),
       isActive: _currentStep >= 4,
     ),
@@ -497,64 +502,61 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-       
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Icon(Icons.school, size: 36, color: AppTheme.primaryColor),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Complete Your Profile',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: AppTheme.primaryColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  LinearProgressIndicator(
-                    value: (_currentStep + 1) / _steps.length,
-                    backgroundColor: Colors.grey[200],
-                    color: AppTheme.primaryColor,
-                    minHeight: 6,
-                  ),
-                  const SizedBox(height: 20),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 400),
-                    child: Stepper(
-                      key: ValueKey(_currentStep),
-                      currentStep: _currentStep,
-                      onStepContinue: _continue,
-                      onStepCancel: _cancel,
-                      steps: _steps,
-                      controlsBuilder: (BuildContext context, ControlsDetails details) {
-                        return Row(
-                          children: [
-                            AppButton(
-                              text: _currentStep == _steps.length - 1 ? 'Finish' : 'Next',
-                              expanded: false,
-                              onPressed: details.onStepContinue,
-                            ),
-                            if (_currentStep > 0)
-                              TextButton(
-                                onPressed: details.onStepCancel,
-                                child: const Text('Back'),
-                              ),
-                          ],
-                        );
-                      },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Icon(Icons.school, size: 36, color: AppTheme.primaryColor),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Complete Your Profile',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                LinearProgressIndicator(
+                  value: (_currentStep + 1) / _steps.length,
+                  backgroundColor: Colors.grey[200],
+                  color: AppTheme.primaryColor,
+                  minHeight: 6,
+                ),
+                const SizedBox(height: 20),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  child: Stepper(
+                    key: ValueKey(_currentStep),
+                    currentStep: _currentStep,
+                    onStepContinue: _continue,
+                    onStepCancel: _cancel,
+                    steps: _steps,
+                    controlsBuilder: (BuildContext context, ControlsDetails details) {
+                      return Row(
+                        children: [
+                          AppButton(
+                            text: _currentStep == _steps.length - 1 ? 'Finish' : 'Next',
+                            expanded: false,
+                            onPressed: details.onStepContinue,
+                          ),
+                          if (_currentStep > 0)
+                            TextButton(
+                              onPressed: details.onStepCancel,
+                              child: const Text('Back'),
+                            ),
+                        ],
+                      );
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
