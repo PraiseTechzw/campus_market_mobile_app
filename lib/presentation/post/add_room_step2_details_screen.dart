@@ -19,7 +19,68 @@ class AddRoomStep2DetailsScreen extends HookConsumerWidget {
     final cityController = useTextEditingController(text: state.city);
     final schoolController = useTextEditingController(text: state.school);
     final campusController = useTextEditingController(text: state.campus);
-    final amenities = ['WiFi', 'Water', 'Furnished', 'Electricity', 'Parking'];
+    final amenities = [
+      'Water',
+      'Borehole',
+      'Municipal Water',
+      'Water Tank',
+      'Electricity (ZESA)',
+      'Solar Power',
+      'Prepaid ZESA Meter',
+      'WiFi / Internet',
+      'Furnished',
+      'Bed',
+      'Desk/Study Table',
+      'Wardrobe/Closet',
+      'Parking',
+      'Carport',
+      'Garden',
+      'Swimming Pool',
+      'Laundry Facilities',
+      'Geyser (Hot Water)',
+      'Shower',
+      'Bathtub',
+      'Private Bathroom',
+      'Shared Bathroom',
+      'Kitchen Access',
+      'Fitted Kitchen',
+      'Stove',
+      'Fridge',
+      'Microwave',
+      'Security (Walled & Gated)',
+      '24hr Security',
+      'Caretaker',
+      'Electric Fence',
+      'Electric Gate',
+      'Alarm System',
+      'CCTV',
+      'Cleaning Service',
+      'Refuse Collection',
+      'Balcony/Verandah',
+      'Braai/BBQ Area',
+      'Entertainment Area',
+      'Study/Office',
+      'Main En Suite',
+      'Flatlet/Cottage',
+      'Staff Quarters',
+      'Pet Friendly',
+      'Smoking Allowed',
+      'Wheelchair Access',
+      'Air Conditioning',
+      'Fireplace',
+      'Burglar Bars',
+      'Double Storey',
+      'Tennis Court',
+      'Workshop',
+      'Storage Room',
+      'Good ZESA',
+      'Paved Driveway',
+      'Tarred Roads',
+      'Close to Transport',
+      'Close to Shops',
+      'Close to Campus'
+      "solar back-up",
+    ];
     final isValid = state.title.isNotEmpty && state.description.isNotEmpty && state.price > 0 && state.city.isNotEmpty && state.school.isNotEmpty && state.campus.isNotEmpty;
     final priceError = useState<String?>(null);
     final primaryColor = const Color(0xFF32CD32);
@@ -57,6 +118,44 @@ class AddRoomStep2DetailsScreen extends HookConsumerWidget {
         notifier.updatePrice(parsed);
       }
     }
+    // Grouped amenities for better UX
+    final groupedAmenities = {
+      'Utilities': [
+        'Water', 'Borehole', 'Municipal Water', 'Water Tank',
+        'Electricity (ZESA)', 'Solar Power', 'Prepaid ZESA Meter', 'Good ZESA',
+      ],
+      'Connectivity': [
+        'WiFi / Internet',
+      ],
+      'Furnishings': [
+        'Furnished', 'Bed', 'Desk/Study Table', 'Wardrobe/Closet',
+      ],
+      'Kitchen': [
+        'Kitchen Access', 'Fitted Kitchen', 'Stove', 'Fridge', 'Microwave',
+      ],
+      'Bathroom': [
+        'Geyser (Hot Water)', 'Shower', 'Bathtub', 'Private Bathroom', 'Shared Bathroom',
+      ],
+      'Security': [
+        'Security (Walled & Gated)', '24hr Security', 'Caretaker', 'Electric Fence', 'Electric Gate', 'Alarm System', 'CCTV', 'Burglar Bars',
+      ],
+      'Facilities': [
+        'Parking', 'Carport', 'Garden', 'Swimming Pool', 'Laundry Facilities', 'Cleaning Service', 'Refuse Collection', 'Balcony/Verandah', 'Braai/BBQ Area', 'Entertainment Area', 'Study/Office', 'Main En Suite', 'Flatlet/Cottage', 'Staff Quarters', 'Storage Room', 'Workshop', 'Tennis Court', 'Double Storey',
+      ],
+      'Other': [
+        'Pet Friendly', 'Smoking Allowed', 'Wheelchair Access', 'Air Conditioning', 'Fireplace', 'Paved Driveway', 'Tarred Roads', 'Close to Transport', 'Close to Shops', 'Close to Campus',
+      ],
+    };
+    final groupIcons = {
+      'Utilities': Icons.bolt,
+      'Connectivity': Icons.wifi,
+      'Furnishings': Icons.chair,
+      'Kitchen': Icons.kitchen,
+      'Bathroom': Icons.bathtub,
+      'Security': Icons.security,
+      'Facilities': Icons.apartment,
+      'Other': Icons.more_horiz,
+    };
     return Scaffold(
       appBar: AppBar(
         title: const Text('Room Details'),
@@ -66,166 +165,190 @@ class AddRoomStep2DetailsScreen extends HookConsumerWidget {
         }),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
-              child: Row(
-                children: [
-                  Text('Step 2 of 4', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: LinearProgressIndicator(
-                      value: 0.5,
-                      color: primaryColor,
-                      backgroundColor: primaryColor.withOpacity(0.15),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: titleController,
-                      decoration: InputDecoration(
-                        labelText: 'Title',
-                        prefixIcon: const Icon(Icons.title),
-                        filled: true,
-                        fillColor: Colors.grey[900],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                        helperText: 'E.g. Spacious single room, Cozy 2-share',
-                      ),
-                      onChanged: notifier.updateTitle,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: descController,
-                      decoration: InputDecoration(
-                        labelText: 'Description',
-                        prefixIcon: const Icon(Icons.description),
-                        filled: true,
-                        fillColor: Colors.grey[900],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                        helperText: 'Describe the room, location, and features...',
-                      ),
-                      maxLines: 3,
-                      onChanged: notifier.updateDescription,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: priceController,
-                      decoration: InputDecoration(
-                        labelText: 'Price per month (USD)',
-                        prefixIcon: const Icon(Icons.attach_money),
-                        filled: true,
-                        fillColor: Colors.grey[900],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                        helperText: 'Enter the monthly price (numbers only)',
-                        errorText: priceError.value,
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'^[0-9]*\.?[0-9]*')),
-                      ],
-                      onChanged: onPriceChanged,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('Amenities', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: amenities.map((amenity) => FilterChip(
-                        label: Text(amenity),
-                        selected: state.amenities.contains(amenity),
-                        selectedColor: primaryColor,
-                        onSelected: (selected) {
-                          final newAmenities = List<String>.from(state.amenities);
-                          if (selected) {
-                            newAmenities.add(amenity);
-                          } else {
-                            newAmenities.remove(amenity);
-                          }
-                          notifier.updateAmenities(newAmenities);
-                        },
-                        labelStyle: TextStyle(
-                          color: state.amenities.contains(amenity) ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.bold,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
+                  child: Row(
+                    children: [
+                      Text('Step 2 of 4', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: 0.5,
+                          color: primaryColor,
+                          backgroundColor: primaryColor.withOpacity(0.15),
                         ),
-                        backgroundColor: Colors.grey[900],
-                        side: BorderSide(color: state.amenities.contains(amenity) ? primaryColor : Colors.grey[700]!),
-                      )).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: cityController,
-                      decoration: InputDecoration(
-                        labelText: 'City',
-                        prefixIcon: const Icon(Icons.location_city),
-                        filled: true,
-                        fillColor: Colors.grey[900],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                        helperText: 'E.g. Harare, Bulawayo',
                       ),
-                      onChanged: notifier.updateCity,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: schoolController,
-                      decoration: InputDecoration(
-                        labelText: 'School',
-                        prefixIcon: const Icon(Icons.school),
-                        filled: true,
-                        fillColor: Colors.grey[900],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                        helperText: 'E.g. UZ, NUST',
-                      ),
-                      onChanged: notifier.updateSchool,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: campusController,
-                      decoration: InputDecoration(
-                        labelText: 'Campus',
-                        prefixIcon: const Icon(Icons.location_on),
-                        filled: true,
-                        fillColor: Colors.grey[900],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                        helperText: 'E.g. Main, City',
-                      ),
-                      onChanged: notifier.updateCampus,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(
-                left: 16, right: 16, bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isValid ? primaryColor : Colors.grey[800],
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    ],
                   ),
-                  onPressed: isValid ? () {
-                    context.pushNamed('addRoomStep3');
-                  } : null,
-                  child: const Text('Next', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
-              ),
-            ),
-          ],
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: titleController,
+                          decoration: InputDecoration(
+                            labelText: 'Title',
+                            prefixIcon: const Icon(Icons.title),
+                            filled: true,
+                            fillColor: Colors.grey[900],
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                            helperText: 'E.g. Spacious single room, Cozy 2-share',
+                          ),
+                          onChanged: notifier.updateTitle,
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: descController,
+                          decoration: InputDecoration(
+                            labelText: 'Description',
+                            prefixIcon: const Icon(Icons.description),
+                            filled: true,
+                            fillColor: Colors.grey[900],
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                            helperText: 'Describe the room, location, and features...',
+                          ),
+                          maxLines: 3,
+                          onChanged: notifier.updateDescription,
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: priceController,
+                          decoration: InputDecoration(
+                            labelText: 'Price per month (USD)',
+                            prefixIcon: const Icon(Icons.attach_money),
+                            filled: true,
+                            fillColor: Colors.grey[900],
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                            helperText: 'Enter the monthly price (numbers only)',
+                            errorText: priceError.value,
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'^[0-9]*\.?[0-9]*')),
+                          ],
+                          onChanged: onPriceChanged,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('Amenities', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: groupedAmenities.entries.map((entry) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(groupIcons[entry.key], size: 18, color: primaryColor),
+                                  const SizedBox(width: 6),
+                                  Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: entry.value.map((amenity) => FilterChip(
+                                  label: Text(amenity),
+                                  selected: state.amenities.contains(amenity),
+                                  selectedColor: primaryColor,
+                                  onSelected: (selected) {
+                                    final newAmenities = List<String>.from(state.amenities);
+                                    if (selected) {
+                                      newAmenities.add(amenity);
+                                    } else {
+                                      newAmenities.remove(amenity);
+                                    }
+                                    notifier.updateAmenities(newAmenities);
+                                  },
+                                  labelStyle: TextStyle(
+                                    color: state.amenities.contains(amenity) ? Colors.white : Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  backgroundColor: Colors.grey[900],
+                                  side: BorderSide(color: state.amenities.contains(amenity) ? primaryColor : Colors.grey[700]!),
+                                )).toList(),
+                              ),
+                              const SizedBox(height: 8),
+                              if (entry.key != groupedAmenities.keys.last) Divider(height: 24, thickness: 1, color: Colors.grey),
+                              const SizedBox(height: 8),
+                            ],
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: cityController,
+                          decoration: InputDecoration(
+                            labelText: 'City',
+                            prefixIcon: const Icon(Icons.location_city),
+                            filled: true,
+                            fillColor: Colors.grey[900],
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                            helperText: 'E.g. Harare, Bulawayo',
+                          ),
+                          onChanged: notifier.updateCity,
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: schoolController,
+                          decoration: InputDecoration(
+                            labelText: 'School',
+                            prefixIcon: const Icon(Icons.school),
+                            filled: true,
+                            fillColor: Colors.grey[900],
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                            helperText: 'E.g. UZ, NUST',
+                          ),
+                          onChanged: notifier.updateSchool,
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: campusController,
+                          decoration: InputDecoration(
+                            labelText: 'Campus',
+                            prefixIcon: const Icon(Icons.location_on),
+                            filled: true,
+                            fillColor: Colors.grey[900],
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                            helperText: 'E.g. Main, City',
+                          ),
+                          onChanged: notifier.updateCampus,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 16, right: 16, bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isValid ? primaryColor : Colors.grey[800],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      onPressed: isValid ? () {
+                        context.pushNamed('addRoomStep3');
+                      } : null,
+                      child: const Text('Next', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

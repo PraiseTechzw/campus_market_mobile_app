@@ -43,22 +43,27 @@ class ProductRepository {
     required String? city,
     String? category,
   }) {
+    print('DEBUG: fetchFilteredProducts called with filters: school=$school, campus=$campus, city=$city, category=$category');
     Query query = _products;
     if (category != null && category != 'All') {
+      print('DEBUG: Adding category filter: $category');
       query = query.where('category', isEqualTo: category);
     }
     if (school != null) {
+      print('DEBUG: Adding school filter: $school');
       query = query.where('school', isEqualTo: school);
     }
     if (campus != null) {
+      print('DEBUG: Adding campus filter: $campus');
       query = query.where('campus', isEqualTo: campus);
     }
     if (city != null) {
+      print('DEBUG: Adding city filter: $city');
       query = query.where('city', isEqualTo: city);
     }
-    // Only show products from verified users
-    // This requires a join, but Firestore doesn't support joins. We'll filter client-side for now.
+    print('DEBUG: Final Firestore query: $query');
     return query.orderBy('createdAt', descending: true).snapshots().asyncMap((snap) async {
+      print('DEBUG: Firestore returned ${snap.docs.length} products');
       final products = snap.docs
           .map((doc) => ProductEntity.fromMap(doc.data() as Map<String, dynamic>, doc.id))
           .toList();
@@ -75,6 +80,7 @@ class ProductRepository {
           }
         }
       }
+      print('DEBUG: Products after user verification filter: ${filtered.length}');
       return filtered;
     });
   }

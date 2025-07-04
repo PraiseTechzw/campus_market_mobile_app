@@ -36,6 +36,7 @@ class AddProductStep5ReviewAndSubmitScreen extends HookConsumerWidget {
           category: state.category,
           condition: state.condition,
           imageUrl: state.imageUrls.isNotEmpty ? state.imageUrls.first : '',
+          imageUrls: state.imageUrls,
           sellerId: user.uid,
           school: userEntity.school ?? '',
           campus: userEntity.campus ?? '',

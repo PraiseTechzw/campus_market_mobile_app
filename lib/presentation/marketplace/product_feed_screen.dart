@@ -5,6 +5,7 @@ import '../../domain/product_entity.dart';
 import '../core/components/app_card.dart';
 import '../core/components/app_button.dart';
 import '../core/app_theme.dart';
+import 'package:go_router/go_router.dart';
 
 class ProductFeedScreen extends ConsumerWidget {
   const ProductFeedScreen({Key? key}) : super(key: key);
@@ -18,16 +19,25 @@ class ProductFeedScreen extends ConsumerWidget {
         backgroundColor: AppTheme.primaryColor,
       ),
       body: productsAsync.when(
-        data: (products) => ListView.builder(
+        data: (products) {
+          print('DEBUG: Product stream emitted with count: [products.length]');
+          return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: products.length,
           itemBuilder: (context, i) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: ProductListTile(product: products[i]),
           ),
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+          );
+        },
+        loading: () {
+          print('DEBUG: Product stream is loading');
+          return const Center(child: CircularProgressIndicator());
+        },
+        error: (e, _) {
+          print('DEBUG: Product stream error: $e');
+          return Center(child: Text('Error: $e'));
+        },
       ),
       );
   }
@@ -58,7 +68,7 @@ class ProductListTile extends StatelessWidget {
         title: Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('USD ${product.price.toStringAsFixed(2)}'),
         onTap: () {
-          // TODO: Navigate to product details
+          GoRouter.of(context).push('/product/${product.id}', extra: product);
         },
       ),
     );

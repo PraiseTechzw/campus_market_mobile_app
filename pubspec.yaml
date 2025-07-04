@@ -59,6 +59,8 @@ dependencies:
   country_code_picker: ^3.3.0
   dropdown_search: ^6.0.2
   phonecodes: ^0.0.4
+  flutter_spinkit: ^5.2.1
+  carousel_slider: ^5.1.1
 
 dev_dependencies:
   flutter_test:

@@ -9,18 +9,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'filter_modal_screen.dart';
 import 'package:campus_market/application/user_providers.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class MarketplaceScreen extends HookConsumerWidget {
   const MarketplaceScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    print('DEBUG: MarketplaceScreen build called');
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = const Color(0xFF32CD32);
 
-    // Placeholder categories
+    // Category chips
     final categories = [
-      'All', 'Books', 'Electronics', 'Fashion', 'Furniture', 'Others'
+      'All', 'Electronics', 'Fashion', 'Books', 'Furniture', 'Others'
     ];
     final selectedCategory = useState('All');
     final filters = useState<Map<String, dynamic>>({
@@ -32,21 +34,21 @@ class MarketplaceScreen extends HookConsumerWidget {
 
     // Watch current user
     final userAsync = ref.watch(profileProvider);
-
-    // Build filters for product provider
-    Map<String, String?> providerFilters = {};
-    userAsync.whenData((user) {
-      providerFilters = {
-        'school': user?.school,
-        'campus': user?.campus,
-        'city': user?.location,
-        'category': filters.value['category'],
-        'condition': filters.value['condition'],
-        // priceRange and sort handled client-side for now
+    final filtersValue = filters.value;
+    Map<String, String?>? providerFiltersNullable;
+    if (userAsync is AsyncData<UserEntity?> && userAsync.value != null) {
+      final user = userAsync.value!;
+      providerFiltersNullable = {
+        'category': filtersValue['category'],
+        'condition': filtersValue['condition'],
       };
-    });
-
-    final productsAsync = ref.watch(filteredProductListProvider(providerFilters));
+    }
+    AsyncValue<List<ProductEntity>> productsAsync = const AsyncValue.loading();
+    if (providerFiltersNullable != null) {
+      final Map<String, String?> providerFilters = providerFiltersNullable;
+      productsAsync = ref.watch(productListProvider);
+    }
+    print('DEBUG: productsAsync value: $productsAsync');
 
     return Scaffold(
       appBar: AppBar(
@@ -67,41 +69,15 @@ class MarketplaceScreen extends HookConsumerWidget {
         actions: [
           IconButton(
             icon: Icon(Icons.filter_list, color: primaryColor),
-            onPressed: () async {
-              await showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                builder: (context) => FilterModalScreen(
-                  categories: categories,
-                  initialFilters: filters.value,
-                  onApply: (newFilters) {
-                    filters.value = newFilters;
-                  },
-                  onClear: () {
-                    filters.value = {
-                      'category': 'All',
-                      'priceRange': const RangeValues(0, 100000),
-                      'condition': 'All',
-                      'sort': 'Newest',
-                    };
-                  },
-                ),
-              );
-            },
+            onPressed: () {},
           ),
         ],
         elevation: 0,
       ),
-      body: userAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (user) {
-          if (user == null) {
-            return const Center(child: Text('User not found'));
-          }
-          return Column(
+      body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+          // Category chips
               SizedBox(
                 height: 48,
                 child: ListView.separated(
@@ -111,15 +87,12 @@ class MarketplaceScreen extends HookConsumerWidget {
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     final cat = categories[index];
-                    final selected = filters.value['category'] == cat;
+                final selected = selectedCategory.value == cat;
                     return ChoiceChip(
                       label: Text(cat),
                       selected: selected,
                       selectedColor: primaryColor.withOpacity(0.2),
-                      onSelected: (_) => filters.value = {
-                        ...filters.value,
-                        'category': cat,
-                      },
+                  onSelected: (_) => selectedCategory.value = cat,
                       labelStyle: TextStyle(
                         color: selected ? primaryColor : (isDark ? Colors.white : Colors.black),
                       ),
@@ -130,53 +103,143 @@ class MarketplaceScreen extends HookConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
+          // Product grid
               Expanded(
                 child: productsAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(child: Text('Error: $e')),
+              loading: () {
+                // Loading skeletons
+                return GridView.builder(
+                  padding: const EdgeInsets.all(12),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.7,
+                  ),
+                  itemCount: 6,
+                  itemBuilder: (context, index) => Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[900] : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Center(
+                      child: SpinKitPulse(color: Colors.grey, size: 40),
+                    ),
+                  ),
+                );
+              },
+              error: (e, stack) {
+                print('DEBUG: productsAsync error: $e');
+                print('DEBUG: productsAsync stack: $stack');
+                return Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Products Error: $e', style: TextStyle(color: Colors.red)),
+                        SizedBox(height: 8),
+                        Text('Stack: $stack', style: TextStyle(fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                );
+              },
                   data: (products) {
-                    // Client-side filter for price and sort
-                    var filtered = products.where((p) {
-                      final price = p.price;
-                      final range = filters.value['priceRange'] as RangeValues;
-                      final cond = filters.value['condition'];
-                      final condOk = cond == 'All' || p.condition == cond;
-                      return price >= range.start && price <= range.end && condOk;
-                    }).toList();
-                    final sort = filters.value['sort'];
-                    if (sort == 'PriceAsc') {
-                      filtered.sort((a, b) => a.price.compareTo(b.price));
-                    } else if (sort == 'PriceDesc') {
-                      filtered.sort((a, b) => b.price.compareTo(a.price));
-                    } // else Newest is default from Firestore
+                print('DEBUG: productsAsync data: count = ${products.length}');
+                // Filter by selected category
+                final filtered = selectedCategory.value == 'All'
+                  ? products
+                  : products.where((p) => p.category == selectedCategory.value).toList();
                     if (filtered.isEmpty) {
-                      return const Center(child: Text('No products found.'));
+                  print('DEBUG: No products found after filtering');
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.shopping_bag_outlined, size: 80, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        const Text('No products found.', style: TextStyle(fontSize: 18)),
+                      ],
+                    ),
+                  );
                     }
                     return RefreshIndicator(
                       onRefresh: () async {
-                        ref.refresh(filteredProductListProvider(providerFilters));
-                      },
-                      child: ListView.builder(
+                    ref.refresh(productListProvider);
+                  },
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(12),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.7,
+                    ),
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
                           final product = filtered[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            child: ListTile(
-                              leading: product.imageUrl.isNotEmpty
-                                  ? Image.network(product.imageUrl, width: 56, height: 56, fit: BoxFit.cover)
-                                  : Container(width: 56, height: 56, color: Colors.grey[300]),
-                              title: Text(product.name),
-                              subtitle: Column(
+                      return GestureDetector(
+                        onTap: () {
+                          context.push('/product/${product.id}', extra: product);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[900] : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.07),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Stack(
                                 children: [
-                                  Text('₦${product.price.toStringAsFixed(2)}'),
-                                  Text('Condition: ${product.condition}'),
+                                  ClipRRect(
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(16),
+                                      topRight: Radius.circular(16),
+                                    ),
+                                    child: product.imageUrl.isNotEmpty
+                                        ? Image.network(product.imageUrl, height: 140, width: double.infinity, fit: BoxFit.cover)
+                                        : Container(height: 140, color: Colors.grey[300]),
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    left: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: primaryColor.withOpacity(0.9),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        product.category,
+                                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
-                              onTap: () {
-                                context.push('/product/${product.id}', extra: product);
-                              },
+                              Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    const SizedBox(height: 4),
+                                    Text('[\$${product.price.toStringAsFixed(2)}]', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 4),
+                                    Text('Condition: ${product.condition}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                             ),
                           );
                         },
@@ -186,8 +249,6 @@ class MarketplaceScreen extends HookConsumerWidget {
                 ),
               ),
             ],
-          );
-        },
       ),
     );
   }

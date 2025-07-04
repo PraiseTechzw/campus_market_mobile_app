@@ -8,6 +8,7 @@ class ProductEntity {
   final String category;
   final String condition; // New/Used
   final String imageUrl;
+  final List<String> imageUrls;
   final String sellerId;
   final String school;
   final String campus;
@@ -22,6 +23,7 @@ class ProductEntity {
     required this.category,
     required this.condition,
     required this.imageUrl,
+    required this.imageUrls,
     required this.sellerId,
     required this.school,
     required this.campus,
@@ -39,6 +41,13 @@ class ProductEntity {
     } else {
       createdAt = DateTime.now();
     }
+    // Support both imageUrl (single) and imageUrls (list)
+    List<String> imageUrls = [];
+    if (map['imageUrls'] != null && map['imageUrls'] is List) {
+      imageUrls = List<String>.from(map['imageUrls']);
+    } else if (map['imageUrl'] != null && map['imageUrl'] is String && map['imageUrl'].toString().isNotEmpty) {
+      imageUrls = [map['imageUrl']];
+    }
     return ProductEntity(
       id: id,
       name: map['name'] ?? '',
@@ -47,6 +56,7 @@ class ProductEntity {
       category: map['category'] ?? '',
       condition: map['condition'] ?? '',
       imageUrl: map['imageUrl'] ?? '',
+      imageUrls: imageUrls,
       sellerId: map['sellerId'] ?? '',
       school: map['school'] ?? '',
       campus: map['campus'] ?? '',
@@ -63,6 +73,7 @@ class ProductEntity {
       'category': category,
       'condition': condition,
       'imageUrl': imageUrl,
+      'imageUrls': imageUrls,
       'sellerId': sellerId,
       'school': school,
       'campus': campus,

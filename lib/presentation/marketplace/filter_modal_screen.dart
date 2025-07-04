@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class FilterModalScreen extends StatefulWidget {
   final List<String> categories;
@@ -35,6 +36,28 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Category icons
+    final categoryIcons = {
+      'All': Icons.apps,
+      'Electronics': Icons.devices_other,
+      'Fashion': Icons.checkroom,
+      'Books': Icons.menu_book,
+      'Furniture': Icons.chair,
+      'Others': Icons.more_horiz,
+    };
+    // Condition icons
+    final conditionIcons = {
+      'All': Icons.all_inclusive,
+      'New': Icons.fiber_new,
+      'Used': Icons.replay,
+    };
+    // Sort icons
+    final sortIcons = {
+      'Newest': Icons.fiber_new,
+      'PriceAsc': FontAwesomeIcons.arrowUp,
+      'PriceDesc': FontAwesomeIcons.arrowDown,
+    };
+
     return Padding(
       padding: MediaQuery.of(context).viewInsets,
       child: SingleChildScrollView(
@@ -56,7 +79,13 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Category', style: Theme.of(context).textTheme.titleMedium),
+              child: Row(
+                children: [
+                  const Text('Category', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  Icon(Icons.apps, color: Colors.blueGrey),
+                ],
+              ),
             ),
             SizedBox(
               height: 48,
@@ -68,7 +97,13 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
                 itemBuilder: (context, index) {
                   final cat = widget.categories[index];
                   return ChoiceChip(
-                    label: Text(cat),
+                    label: Row(
+                      children: [
+                        Icon(categoryIcons[cat] ?? Icons.apps, size: 18),
+                        const SizedBox(width: 4),
+                        Text(cat),
+                      ],
+                    ),
                     selected: selectedCategory == cat,
                     onSelected: (_) => setState(() => selectedCategory = cat),
                   );
@@ -78,7 +113,15 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Price Range (₦${priceRange.start.toInt()} - ₦${priceRange.end.toInt()})', style: Theme.of(context).textTheme.titleMedium),
+              child: Row(
+                children: [
+                  const Text('Price Range', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  Icon(Icons.attach_money, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Text('(4${priceRange.start.toInt()} - 4${priceRange.end.toInt()})', style: const TextStyle(color: Colors.green)),
+                ],
+              ),
             ),
             RangeSlider(
               min: 0,
@@ -90,25 +133,49 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Condition', style: Theme.of(context).textTheme.titleMedium),
+              child: Row(
+                children: [
+                  const Text('Condition', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  Icon(Icons.verified, color: Colors.orange),
+                ],
+              ),
             ),
             Row(
               children: [
                 const SizedBox(width: 16),
                 ChoiceChip(
-                  label: const Text('All'),
+                  label: Row(
+                    children: [
+                      Icon(conditionIcons['All'], size: 16),
+                      const SizedBox(width: 4),
+                      const Text('All'),
+                    ],
+                  ),
                   selected: selectedCondition == 'All',
                   onSelected: (_) => setState(() => selectedCondition = 'All'),
                 ),
                 const SizedBox(width: 8),
                 ChoiceChip(
-                  label: const Text('New'),
+                  label: Row(
+                    children: [
+                      Icon(conditionIcons['New'], size: 16),
+                      const SizedBox(width: 4),
+                      const Text('New'),
+                    ],
+                  ),
                   selected: selectedCondition == 'New',
                   onSelected: (_) => setState(() => selectedCondition = 'New'),
                 ),
                 const SizedBox(width: 8),
                 ChoiceChip(
-                  label: const Text('Used'),
+                  label: Row(
+                    children: [
+                      Icon(conditionIcons['Used'], size: 16),
+                      const SizedBox(width: 4),
+                      const Text('Used'),
+                    ],
+                  ),
                   selected: selectedCondition == 'Used',
                   onSelected: (_) => setState(() => selectedCondition = 'Used'),
                 ),
@@ -117,25 +184,49 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Sort By', style: Theme.of(context).textTheme.titleMedium),
+              child: Row(
+                children: [
+                  const Text('Sort By', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  Icon(Icons.sort, color: Colors.purple),
+                ],
+              ),
             ),
             Row(
               children: [
                 const SizedBox(width: 16),
                 ChoiceChip(
-                  label: const Text('Newest'),
+                  label: Row(
+                    children: [
+                      Icon(sortIcons['Newest'], size: 16),
+                      const SizedBox(width: 4),
+                      const Text('Newest'),
+                    ],
+                  ),
                   selected: selectedSort == 'Newest',
                   onSelected: (_) => setState(() => selectedSort = 'Newest'),
                 ),
                 const SizedBox(width: 8),
                 ChoiceChip(
-                  label: const Text('Price ↑'),
+                  label: Row(
+                    children: [
+                      Icon(sortIcons['PriceAsc'], size: 16),
+                      const SizedBox(width: 4),
+                      const Text('Price ↑'),
+                    ],
+                  ),
                   selected: selectedSort == 'PriceAsc',
                   onSelected: (_) => setState(() => selectedSort = 'PriceAsc'),
                 ),
                 const SizedBox(width: 8),
                 ChoiceChip(
-                  label: const Text('Price ↓'),
+                  label: Row(
+                    children: [
+                      Icon(sortIcons['PriceDesc'], size: 16),
+                      const SizedBox(width: 4),
+                      const Text('Price ↓'),
+                    ],
+                  ),
                   selected: selectedSort == 'PriceDesc',
                   onSelected: (_) => setState(() => selectedSort = 'PriceDesc'),
                 ),
