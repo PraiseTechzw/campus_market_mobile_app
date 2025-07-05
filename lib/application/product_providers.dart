@@ -2,7 +2,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../infrastructure/product_repository.dart';
 import '../domain/product_entity.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_firestore/firebase_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Provider for product list stream
 final productListProvider = StreamProvider<List<ProductEntity>>((ref) {
