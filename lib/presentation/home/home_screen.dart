@@ -4,7 +4,7 @@ import '../core/app_theme.dart';
 import '../accommodation/accommodation_screen.dart';
 import '../post/post_ad_entry_screen.dart';
 import '../chat/chat_stub.dart';
-import '../profile/profile_stub.dart';
+import '../profile/profile_screen.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/chat_providers.dart';
 
@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
     AccommodationScreen(),
     PostAdEntryScreen(),
     ChatStub(),
-    ProfileStub(),
+    ProfileScreen(),
   ];
 
   @override

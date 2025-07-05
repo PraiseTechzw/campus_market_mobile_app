@@ -37,6 +37,46 @@ class UserEntity {
     this.verificationStatus,
   });
 
+  UserEntity copyWith({
+    String? uid,
+    String? name,
+    String? email,
+    String? role,
+    bool? verified,
+    String? photoURL,
+    String? phone,
+    String? school,
+    String? campus,
+    String? studentId,
+    String? studentIdPhotoUrl,
+    String? location,
+    String? dateOfBirth,
+    String? gender,
+    String? profilePhotoUrl,
+    String? bio,
+    String? verificationStatus,
+  }) {
+    return UserEntity(
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      verified: verified ?? this.verified,
+      photoURL: photoURL ?? this.photoURL,
+      phone: phone ?? this.phone,
+      school: school ?? this.school,
+      campus: campus ?? this.campus,
+      studentId: studentId ?? this.studentId,
+      studentIdPhotoUrl: studentIdPhotoUrl ?? this.studentIdPhotoUrl,
+      location: location ?? this.location,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      gender: gender ?? this.gender,
+      profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
+      bio: bio ?? this.bio,
+      verificationStatus: verificationStatus ?? this.verificationStatus,
+    );
+  }
+
   factory UserEntity.fromMap(Map<String, dynamic> map, String uid) {
     return UserEntity(
       uid: uid,
