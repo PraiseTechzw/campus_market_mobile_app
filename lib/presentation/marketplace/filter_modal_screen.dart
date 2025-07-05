@@ -43,6 +43,8 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
       'Fashion': Icons.checkroom,
       'Books': Icons.menu_book,
       'Furniture': Icons.chair,
+      'Sports': Icons.sports_soccer,
+      'Beauty': Icons.face,
       'Others': Icons.more_horiz,
     };
     // Condition icons
@@ -58,25 +60,47 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
       'PriceDesc': FontAwesomeIcons.arrowDown,
     };
 
-    return Padding(
-      padding: MediaQuery.of(context).viewInsets,
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Padding(
+        padding: MediaQuery.of(context).viewInsets,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Icon(Icons.tune, color: Colors.blue[600], size: 24),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Filter & Sort',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -233,39 +257,57 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                const SizedBox(width: 16),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      widget.onClear();
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Clear'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        widget.onClear();
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.clear),
+                      label: const Text('Clear All'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      widget.onApply({
-                        'category': selectedCategory,
-                        'priceRange': priceRange,
-                        'condition': selectedCondition,
-                        'sort': selectedSort,
-                      });
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Apply'),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        widget.onApply({
+                          'category': selectedCategory,
+                          'priceRange': priceRange,
+                          'condition': selectedCondition,
+                          'sort': selectedSort,
+                        });
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.check),
+                      label: const Text('Apply Filters'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[600],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 24),
           ],
         ),
+      ),
       ),
     );
   }

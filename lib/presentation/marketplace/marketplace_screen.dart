@@ -61,18 +61,25 @@ class MarketplaceScreen extends HookConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: isDark ? Colors.black : Colors.white,
-        title: TextField(
-          decoration: InputDecoration(
-            hintText: 'Search products...',
-            prefixIcon: Icon(Icons.search, color: isDark ? Colors.white70 : Colors.black54),
-            border: InputBorder.none,
+        title: Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[800] : Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
           ),
-          style: TextStyle(color: isDark ? Colors.white : Colors.black),
-          onSubmitted: (query) {
-            if (query.trim().isNotEmpty) {
-              context.push('/search', extra: query.trim());
-            }
-          },
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: '🔍 Search products...',
+              prefixIcon: Icon(Icons.search, color: isDark ? Colors.white70 : Colors.black54),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            style: TextStyle(color: isDark ? Colors.white : Colors.black),
+            onSubmitted: (query) {
+              if (query.trim().isNotEmpty) {
+                context.push('/search', extra: query.trim());
+              }
+            },
+          ),
         ),
         actions: [
           IconButton(
@@ -80,8 +87,31 @@ class MarketplaceScreen extends HookConsumerWidget {
             onPressed: () => context.push('/favorites'),
           ),
           IconButton(
-            icon: Icon(Icons.filter_list, color: primaryColor),
-            onPressed: () {},
+            icon: Icon(Icons.tune, color: primaryColor),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => FilterModalScreen(
+                  categories: categories.map((c) => c['name'] as String).toList(),
+                  initialFilters: filters.value,
+                  onApply: (newFilters) {
+                    filters.value = newFilters;
+                    selectedCategory.value = newFilters['category'] ?? 'All';
+                  },
+                  onClear: () {
+                    filters.value = {
+                      'category': 'All',
+                      'priceRange': const RangeValues(0, 100000),
+                      'condition': 'All',
+                      'sort': 'Newest',
+                    };
+                    selectedCategory.value = 'All';
+                  },
+                ),
+              );
+            },
           ),
         ],
         elevation: 0,
@@ -99,12 +129,19 @@ class MarketplaceScreen extends HookConsumerWidget {
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     final cat = categories[index];
-                final selected = selectedCategory.value == cat;
+                    final selected = selectedCategory.value == cat['name'];
                     return ChoiceChip(
-                      label: Text(cat),
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(cat['icon'] as IconData, size: 16),
+                          const SizedBox(width: 4),
+                          Text(cat['name'] as String),
+                        ],
+                      ),
                       selected: selected,
                       selectedColor: primaryColor.withOpacity(0.2),
-                  onSelected: (_) => selectedCategory.value = cat,
+                      onSelected: (_) => selectedCategory.value = cat['name'] as String,
                       labelStyle: TextStyle(
                         color: selected ? primaryColor : (isDark ? Colors.white : Colors.black),
                       ),
@@ -114,6 +151,33 @@ class MarketplaceScreen extends HookConsumerWidget {
                   },
                 ),
               ),
+              const SizedBox(height: 8),
+              // Filter indicator
+              if (filtersValue['category'] != 'All' || 
+                  filtersValue['condition'] != 'All' || 
+                  filtersValue['sort'] != 'Newest' ||
+                  (filtersValue['priceRange'] as RangeValues).start > 0 ||
+                  (filtersValue['priceRange'] as RangeValues).end < 100000)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: primaryColor.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.filter_alt, size: 16, color: primaryColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Filters Active',
+                        style: TextStyle(fontSize: 12, color: primaryColor, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 8),
           // Product grid
               Expanded(
@@ -158,10 +222,36 @@ class MarketplaceScreen extends HookConsumerWidget {
               },
                   data: (products) {
                 print('DEBUG: productsAsync data: count = ${products.length}');
-                // Filter by selected category
-                final filtered = selectedCategory.value == 'All'
-                  ? products
-                  : products.where((p) => p.category == selectedCategory.value).toList();
+                // Apply filters
+                var filtered = products;
+                
+                // Category filter
+                if (filtersValue['category'] != 'All') {
+                  filtered = filtered.where((p) => p.category == filtersValue['category']).toList();
+                }
+                
+                // Condition filter
+                if (filtersValue['condition'] != 'All') {
+                  filtered = filtered.where((p) => p.condition == filtersValue['condition']).toList();
+                }
+                
+                // Price range filter
+                final priceRange = filtersValue['priceRange'] as RangeValues? ?? const RangeValues(0, 100000);
+                filtered = filtered.where((p) => p.price >= priceRange.start && p.price <= priceRange.end).toList();
+                
+                // Sort
+                switch (filtersValue['sort']) {
+                  case 'PriceAsc':
+                    filtered.sort((a, b) => a.price.compareTo(b.price));
+                    break;
+                  case 'PriceDesc':
+                    filtered.sort((a, b) => b.price.compareTo(a.price));
+                    break;
+                  case 'Newest':
+                  default:
+                    filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                    break;
+                }
                     if (filtered.isEmpty) {
                   print('DEBUG: No products found after filtering');
                   return Center(
