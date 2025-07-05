@@ -44,11 +44,15 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -58,7 +62,7 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: colorScheme.onSurface.withOpacity(0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -70,8 +74,9 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
               children: [
                 Text(
                   'Filters',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  style: textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 TextButton(
@@ -87,7 +92,13 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                       _selectedCity = 'All';
                     });
                   },
-                  child: const Text('Clear All'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.primaryColor,
+                  ),
+                  child: const Text(
+                    'Clear All',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
@@ -102,8 +113,9 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                   // Price Range
                   Text(
                     'Price Range',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -122,36 +134,63 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                       });
                     },
                     activeColor: AppTheme.primaryColor,
+                    inactiveColor: colorScheme.onSurface.withOpacity(0.2),
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('\$${_priceRange.start.round()}'),
-                      Text('\$${_priceRange.end.round()}'),
+                      Text(
+                        '\$${_priceRange.start.round()}',
+                        style: TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        '\$${_priceRange.end.round()}',
+                        style: TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
                   // Room Type
                   Text(
                     'Room Type',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     children: _roomTypes.map((type) {
+                      final selected = _selectedType == type;
                       return FilterChip(
-                        label: Text(type),
-                        selected: _selectedType == type,
+                        label: Text(
+                          type,
+                          style: TextStyle(
+                            color: selected ? colorScheme.onPrimary : AppTheme.primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        selected: selected,
                         onSelected: (selected) {
                           setState(() {
                             _selectedType = selected ? type : 'All';
                           });
                         },
-                        selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-                        checkmarkColor: AppTheme.primaryColor,
+                        selectedColor: AppTheme.primaryColor,
+                        backgroundColor: colorScheme.surfaceVariant,
+                        checkmarkColor: colorScheme.onPrimary,
+                        side: BorderSide(
+                          color: selected ? AppTheme.primaryColor : colorScheme.outline,
+                        ),
                       );
                     }).toList(),
                   ),
@@ -159,24 +198,18 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                   // Location Filters
                   Text(
                     'Location',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 12),
                   // School Dropdown
-                  DropdownButtonFormField<String>(
+                  _buildDropdown(
+                    context,
+                    label: 'School',
                     value: _selectedSchool,
-                    decoration: const InputDecoration(
-                      labelText: 'School',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: ['All', 'University of Example', 'College of Technology', 'Business School']
-                        .map((school) => DropdownMenuItem(
-                              value: school,
-                              child: Text(school),
-                            ))
-                        .toList(),
+                    items: ['All', 'University of Example', 'College of Technology', 'Business School'],
                     onChanged: (value) {
                       setState(() {
                         _selectedSchool = value ?? 'All';
@@ -185,18 +218,11 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                   ),
                   const SizedBox(height: 12),
                   // Campus Dropdown
-                  DropdownButtonFormField<String>(
+                  _buildDropdown(
+                    context,
+                    label: 'Campus',
                     value: _selectedCampus,
-                    decoration: const InputDecoration(
-                      labelText: 'Campus',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: ['All', 'Main Campus', 'North Campus', 'South Campus', 'Downtown Campus']
-                        .map((campus) => DropdownMenuItem(
-                              value: campus,
-                              child: Text(campus),
-                            ))
-                        .toList(),
+                    items: ['All', 'Main Campus', 'North Campus', 'South Campus', 'Downtown Campus'],
                     onChanged: (value) {
                       setState(() {
                         _selectedCampus = value ?? 'All';
@@ -205,18 +231,11 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                   ),
                   const SizedBox(height: 12),
                   // City Dropdown
-                  DropdownButtonFormField<String>(
+                  _buildDropdown(
+                    context,
+                    label: 'City',
                     value: _selectedCity,
-                    decoration: const InputDecoration(
-                      labelText: 'City',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: ['All', 'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix']
-                        .map((city) => DropdownMenuItem(
-                              value: city,
-                              child: Text(city),
-                            ))
-                        .toList(),
+                    items: ['All', 'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'],
                     onChanged: (value) {
                       setState(() {
                         _selectedCity = value ?? 'All';
@@ -227,8 +246,9 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                   // Amenities
                   Text(
                     'Amenities',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -236,9 +256,16 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                     spacing: 8,
                     runSpacing: 8,
                     children: _amenities.map((amenity) {
+                      final selected = _selectedAmenities.contains(amenity);
                       return FilterChip(
-                        label: Text(amenity),
-                        selected: _selectedAmenities.contains(amenity),
+                        label: Text(
+                          amenity,
+                          style: TextStyle(
+                            color: selected ? colorScheme.onPrimary : AppTheme.primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        selected: selected,
                         onSelected: (selected) {
                           setState(() {
                             if (selected) {
@@ -248,8 +275,12 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                             }
                           });
                         },
-                        selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-                        checkmarkColor: AppTheme.primaryColor,
+                        selectedColor: AppTheme.primaryColor,
+                        backgroundColor: colorScheme.surfaceVariant,
+                        checkmarkColor: colorScheme.onPrimary,
+                        side: BorderSide(
+                          color: selected ? AppTheme.primaryColor : colorScheme.outline,
+                        ),
                       );
                     }).toList(),
                   ),
@@ -257,22 +288,26 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                   // Sort Options
                   Text(
                     'Sort By',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
+                  _buildDropdown(
+                    context,
+                    label: 'Sort By',
                     value: _selectedSortBy,
-                    decoration: const InputDecoration(
-                      labelText: 'Sort By',
-                      border: OutlineInputBorder(),
-                    ),
                     items: [
-                      DropdownMenuItem(value: 'createdAt', child: Text('Date Posted')),
-                      DropdownMenuItem(value: 'price', child: Text('Price')),
-                      DropdownMenuItem(value: 'location', child: Text('Location')),
+                      'createdAt',
+                      'price',
+                      'location',
                     ],
+                    itemLabels: const {
+                      'createdAt': 'Date Posted',
+                      'price': 'Price',
+                      'location': 'Location',
+                    },
                     onChanged: (value) {
                       setState(() {
                         _selectedSortBy = value ?? 'createdAt';
@@ -285,9 +320,13 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                     children: [
                       Expanded(
                         child: RadioListTile<bool>(
-                          title: const Text('Newest First'),
+                          title: Text(
+                            'Newest First',
+                            style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500, color: colorScheme.onSurface),
+                          ),
                           value: true,
                           groupValue: _sortDescending,
+                          activeColor: AppTheme.primaryColor,
                           onChanged: (value) {
                             setState(() {
                               _sortDescending = value ?? true;
@@ -297,9 +336,13 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
                       ),
                       Expanded(
                         child: RadioListTile<bool>(
-                          title: const Text('Oldest First'),
+                          title: Text(
+                            'Oldest First',
+                            style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500, color: colorScheme.onSurface),
+                          ),
                           value: false,
                           groupValue: _sortDescending,
+                          activeColor: AppTheme.primaryColor,
                           onChanged: (value) {
                             setState(() {
                               _sortDescending = value ?? false;
@@ -345,6 +388,71 @@ class _AccommodationFilterModalState extends State<AccommodationFilterModal> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDropdown(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required List<String> items,
+    Map<String, String>? itemLabels,
+    required void Function(String?) onChanged,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurface.withOpacity(0.7),
+          fontWeight: FontWeight.w500,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: colorScheme.outline,
+            width: 1,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: colorScheme.outline,
+            width: 1,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: AppTheme.primaryColor,
+            width: 2,
+          ),
+        ),
+        filled: true,
+        fillColor: colorScheme.surfaceVariant,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+      ),
+      style: textTheme.bodyLarge?.copyWith(
+        color: colorScheme.onSurface,
+        fontWeight: FontWeight.w600,
+      ),
+      dropdownColor: colorScheme.surfaceVariant,
+      icon: Icon(
+        Icons.keyboard_arrow_down,
+        color: AppTheme.primaryColor,
+      ),
+      items: items
+          .map((item) => DropdownMenuItem(
+                value: item,
+                child: Text(itemLabels != null ? itemLabels[item] ?? item : item),
+              ))
+          .toList(),
+      onChanged: onChanged,
     );
   }
 } 

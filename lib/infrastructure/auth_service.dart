@@ -113,4 +113,9 @@ class AuthService {
     final user = _auth.currentUser;
     return user?.emailVerified ?? false;
   }
+
+  // Update user profile fields
+  Future<void> updateUserProfile(String userId, Map<String, dynamic> data) async {
+    await _firestore.collection('users').doc(userId).update(data);
+  }
 }

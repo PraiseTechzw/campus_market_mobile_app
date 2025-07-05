@@ -10,6 +10,8 @@ import '../../domain/user_entity.dart';
 import '../../application/user_providers.dart';
 import '../../application/chat_providers.dart';
 import '../chat/chat_screen.dart';
+import '../../application/room_providers.dart';
+import '../../application/chat_providers.dart';
 
 class RoomDetailScreen extends StatefulWidget {
   final RoomEntity room;
@@ -284,17 +286,53 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   // Book Now Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: AppButton(
-                      onPressed: () {
-                        // TODO: Implement booking functionality
-                        AppToast.show(context, 'Booking feature coming soon!');
-                      },
-                      text: 'Book Now',
-                      icon: Icons.book_online,
-                      isOutlined: true,
-                    ),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final isBooked = widget.room.isBooked;
+                      final currentUserId = ref.watch(currentUserIdProvider);
+                      final bookRoomAsync = ref.watch(bookRoomProvider({'roomId': widget.room.id, 'userId': currentUserId ?? ''}));
+                      if (isBooked) {
+                        return SizedBox(
+                          width: double.infinity,
+                          child: AppButton(
+                            onPressed: null,
+                            text: 'Booked',
+                            icon: Icons.lock,
+                          ),
+                        );
+                      }
+                      return SizedBox(
+                        width: double.infinity,
+                        child: AppButton(
+                          onPressed: currentUserId == null || bookRoomAsync.isLoading
+                              ? null
+                              : () async {
+                                  final confirmed = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Book Room'),
+                                      content: const Text('Are you sure you want to book this room?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () => Navigator.pop(context, true),
+                                          child: const Text('Book Now'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (confirmed == true) {
+                                    ref.refresh(bookRoomProvider({'roomId': widget.room.id, 'userId': currentUserId!}));
+                                  }
+                                },
+                          text: bookRoomAsync.isLoading ? 'Booking...' : 'Book Now',
+                          icon: Icons.book_online,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 32),
                 ],
@@ -353,10 +391,10 @@ class ContactOptionsSheet extends StatelessWidget {
                       'otherUserId': room.userId,
                       'otherUserName': userName,
                       'initialMessage': 'Hi, I\'m interested in your ${room.type} room at ${room.campus}',
-                    }));
+                    }).future);
                     
                     // Get the chat entity
-                    final chat = await ref.read(chatProvider(chatId));
+                    final chat = await ref.read(chatProvider(chatId).future);
                     
                     if (chat != null && context.mounted) {
                       Navigator.push(

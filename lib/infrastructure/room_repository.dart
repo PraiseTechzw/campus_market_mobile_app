@@ -48,31 +48,29 @@ class RoomRepository {
     String sortBy = 'createdAt',
     bool descending = true,
   }) {
-    Query query = _rooms
-      .where('verificationStatus', isEqualTo: 'verified')
-      .where('isBooked', isEqualTo: false);
-    if (school != null && school.isNotEmpty) {
-      query = query.where('school', isEqualTo: school);
-    }
-    if (campus != null && campus.isNotEmpty) {
-      query = query.where('campus', isEqualTo: campus);
-    }
-    if (city != null && city.isNotEmpty) {
-      query = query.where('city', isEqualTo: city);
-    }
-    if (type != null && type.isNotEmpty) {
-      query = query.where('type', isEqualTo: type);
-    }
-    if (minPrice != null) {
-      query = query.where('price', isGreaterThanOrEqualTo: minPrice);
-    }
-    if (maxPrice != null) {
-      query = query.where('price', isLessThanOrEqualTo: maxPrice);
-    }
-    // Firestore does not support array-contains-any for multiple amenities, so filter client-side
-    return query.orderBy(sortBy, descending: descending).snapshots().map(
+    // Remove all Firestore query filters, fetch all rooms
+    return _rooms.orderBy(sortBy, descending: descending).snapshots().map(
       (snap) {
         var rooms = snap.docs.map((doc) => RoomEntity.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
+        // Optionally, apply client-side filtering here if needed
+        if (school != null && school.isNotEmpty) {
+          rooms = rooms.where((room) => room.school == school).toList();
+        }
+        if (campus != null && campus.isNotEmpty) {
+          rooms = rooms.where((room) => room.campus == campus).toList();
+        }
+        if (city != null && city.isNotEmpty) {
+          rooms = rooms.where((room) => room.city == city).toList();
+        }
+        if (type != null && type.isNotEmpty) {
+          rooms = rooms.where((room) => room.type == type).toList();
+        }
+        if (minPrice != null) {
+          rooms = rooms.where((room) => room.price >= minPrice).toList();
+        }
+        if (maxPrice != null) {
+          rooms = rooms.where((room) => room.price <= maxPrice).toList();
+        }
         if (amenities != null && amenities.isNotEmpty) {
           rooms = rooms.where((room) => amenities.every((a) => room.amenities.contains(a))).toList();
         }
@@ -95,5 +93,13 @@ class RoomRepository {
         )
         .toList()
       );
+  }
+
+  // Book a room
+  Future<void> bookRoom(String roomId, String userId) async {
+    await _rooms.doc(roomId).update({
+      'isBooked': true,
+      'bookedBy': userId,
+    });
   }
 } 

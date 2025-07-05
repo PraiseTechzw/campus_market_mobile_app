@@ -694,7 +694,7 @@ class ProductDetailScreen extends HookConsumerWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () {
+                  onPressed: () {
                         Share.share('Check out this product: ${product.name} - \$${product.price.toStringAsFixed(2)}');
                   },
                 ),

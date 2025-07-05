@@ -61,10 +61,22 @@ class _AccommodationScreenState extends State<AccommodationScreen> {
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Search for rooms, locations...',
-                      prefixIcon: const Icon(Icons.search),
+                      hintStyle: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 16,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: AppTheme.primaryColor,
+                        size: 24,
+                      ),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear),
+                              icon: Icon(
+                                Icons.clear,
+                                color: Colors.grey[600],
+                                size: 20,
+                              ),
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() {
@@ -75,9 +87,35 @@ class _AccommodationScreenState extends State<AccommodationScreen> {
                           : null,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.grey[300]!,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.grey[300]!,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: AppTheme.primaryColor,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black87,
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -172,7 +210,6 @@ class _AccommodationScreenState extends State<AccommodationScreen> {
                         AppButton(
                           onPressed: () => ref.refresh(filteredRoomsProvider),
                           text: 'Retry',
-                          isOutlined: true,
                         ),
                       ],
                     ),

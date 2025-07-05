@@ -17,6 +17,14 @@ final addRoomProvider = FutureProvider.family<void, RoomEntity>((ref, room) asyn
   await ref.watch(roomRepositoryProvider).addRoom(room);
 });
 
+// Provider for booking a room
+final bookRoomProvider = FutureProvider.family<void, Map<String, String>>((ref, data) async {
+  final repo = ref.watch(roomRepositoryProvider);
+  final roomId = data['roomId']!;
+  final userId = data['userId']!;
+  await repo.bookRoom(roomId, userId);
+});
+
 // Accommodation filter state
 class AccommodationFilter {
   final String? school;
