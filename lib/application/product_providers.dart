@@ -43,6 +43,33 @@ final userFavoritesProvider = StreamProvider<List<String>>((ref) {
       .map((snapshot) => snapshot.docs.map((doc) => doc.id).toList());
 });
 
+// Provider for user's favorite product entities
+final userFavoriteProductsProvider = StreamProvider<List<ProductEntity>>((ref) {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return Stream.value([]);
+  
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('favorites')
+      .snapshots()
+      .asyncMap((snapshot) async {
+        final productIds = snapshot.docs.map((doc) => doc.id).toList();
+        if (productIds.isEmpty) return [];
+        
+        final products = await Future.wait(
+          productIds.map((id) => FirebaseFirestore.instance
+              .collection('products')
+              .doc(id)
+              .get()
+              .then((doc) => doc.exists ? ProductEntity.fromMap(doc.data()!, doc.id) : null)
+              .catchError((_) => null))
+        );
+        
+        return products.where((product) => product != null).cast<ProductEntity>().toList();
+      });
+});
+
 // Provider for adding/removing favorites
 final toggleFavoriteProvider = FutureProvider.family<void, String>((ref, productId) async {
   final user = FirebaseAuth.instance.currentUser;
