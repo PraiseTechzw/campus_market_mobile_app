@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/onboarding_provider.dart';
 import '../core/app_theme.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -19,17 +20,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _OnboardingPageData(
       title: 'Marketplace',
       description: 'Buy and sell student products easily on campus.',
-      icon: Icons.shopping_cart,
+      image: 'assets/images/marketplace.png',
     ),
     _OnboardingPageData(
       title: 'Accommodation',
       description: 'Find and book student rooms with real-time availability.',
-      icon: Icons.home,
+      image: 'assets/images/accomodation.png',
     ),
     _OnboardingPageData(
       title: 'Messaging',
       description: 'Chat with buyers, sellers, and landlords securely.',
-      icon: Icons.chat_bubble_outline,
+      image: 'assets/images/message.png',
     ),
   ];
 
@@ -139,8 +140,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 class _OnboardingPageData {
   final String title;
   final String description;
-  final IconData icon;
-  _OnboardingPageData({required this.title, required this.description, required this.icon});
+  final String image;
+  _OnboardingPageData({required this.title, required this.description, required this.image});
 }
 
 class _OnboardingPage extends StatelessWidget {
@@ -154,7 +155,14 @@ class _OnboardingPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(data.icon, size: 100, color: AppTheme.primaryColor),
+          Image.asset(
+            data.image,
+            height: 220,
+            fit: BoxFit.contain,
+          )
+              .animate()
+              .fadeIn(duration: 600.ms)
+              .slideY(begin: 0.2, end: 0, duration: 600.ms, curve: Curves.easeOut),
           const SizedBox(height: 32),
           Text(
             data.title,
@@ -163,13 +171,19 @@ class _OnboardingPage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
             textAlign: TextAlign.center,
-          ),
+          )
+              .animate()
+              .fadeIn(duration: 500.ms, delay: 200.ms)
+              .slideY(begin: 0.1, end: 0, duration: 500.ms, curve: Curves.easeOut),
           const SizedBox(height: 16),
           Text(
             data.description,
             style: Theme.of(context).textTheme.bodyLarge,
             textAlign: TextAlign.center,
-          ),
+          )
+              .animate()
+              .fadeIn(duration: 500.ms, delay: 400.ms)
+              .slideY(begin: 0.05, end: 0, duration: 500.ms, curve: Curves.easeOut),
         ],
       ),
     );
