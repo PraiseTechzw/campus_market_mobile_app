@@ -9,12 +9,12 @@ class FilterModalScreen extends StatefulWidget {
   final VoidCallback onClear;
 
   const FilterModalScreen({
-    Key? key,
+    super.key,
     required this.categories,
     required this.initialFilters,
     required this.onApply,
     required this.onClear,
-  }) : super(key: key);
+  });
 
   @override
   State<FilterModalScreen> createState() => _FilterModalScreenState();

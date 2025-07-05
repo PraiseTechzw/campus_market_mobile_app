@@ -7,7 +7,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter/services.dart';
 
 class AddProductStep2DetailsScreen extends HookConsumerWidget {
-  const AddProductStep2DetailsScreen({Key? key}) : super(key: key);
+  const AddProductStep2DetailsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

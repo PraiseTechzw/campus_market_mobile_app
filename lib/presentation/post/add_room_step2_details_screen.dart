@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import '../../presentation/core/app_router.dart';
 
 class AddRoomStep2DetailsScreen extends HookConsumerWidget {
-  const AddRoomStep2DetailsScreen({Key? key}) : super(key: key);
+  const AddRoomStep2DetailsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -89,15 +89,15 @@ class AddRoomStep2DetailsScreen extends HookConsumerWidget {
     final didPrefill = useRef(false);
     useEffect(() {
       if (!didPrefill.value && userEntity != null) {
-        if ((state.school == null || state.school.isEmpty) && ((userEntity.school ?? '').isNotEmpty)) {
+        if ((state.school.isEmpty) && ((userEntity.school ?? '').isNotEmpty)) {
           schoolController.text = userEntity.school!;
           Future.microtask(() => notifier.updateSchool(userEntity.school!));
         }
-        if ((state.campus == null || state.campus.isEmpty) && ((userEntity.campus ?? '').isNotEmpty)) {
+        if ((state.campus.isEmpty) && ((userEntity.campus ?? '').isNotEmpty)) {
           campusController.text = userEntity.campus!;
           Future.microtask(() => notifier.updateCampus(userEntity.campus!));
         }
-        if ((state.city == null || state.city.isEmpty) && ((userEntity.location ?? '').isNotEmpty)) {
+        if ((state.city.isEmpty) && ((userEntity.location ?? '').isNotEmpty)) {
           cityController.text = userEntity.location!;
           Future.microtask(() => notifier.updateCity(userEntity.location!));
         }

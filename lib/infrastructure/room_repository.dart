@@ -10,7 +10,7 @@ class RoomRepository {
   // Fetch all rooms
   Stream<List<RoomEntity>> fetchRooms() {
     return _rooms.orderBy('createdAt', descending: true).snapshots().map(
-      (snap) => snap.docs.map((doc) => RoomEntity.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList(),
+      (snap) => snap.docs.map((doc) => RoomEntity.fromMap(doc.data(), doc.id)).toList(),
     );
   }
 
@@ -88,7 +88,7 @@ class RoomRepository {
       .where('isBooked', isEqualTo: false)
       .snapshots()
       .map((snap) => snap.docs
-        .map((doc) => RoomEntity.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+        .map((doc) => RoomEntity.fromMap(doc.data(), doc.id))
         .where((room) =>
           room.location.toLowerCase().contains(keyword.toLowerCase()) ||
           room.description.toLowerCase().contains(keyword.toLowerCase())

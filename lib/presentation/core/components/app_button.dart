@@ -9,13 +9,13 @@ class AppButton extends StatelessWidget {
   final bool expanded;
 
   const AppButton({
-    Key? key,
+    super.key,
     required this.text,
     this.onPressed,
     this.loading = false,
     this.icon,
     this.expanded = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

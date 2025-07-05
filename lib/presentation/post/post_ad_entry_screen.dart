@@ -4,7 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/profile_provider.dart';
 
 class PostAdEntryScreen extends HookConsumerWidget {
-  const PostAdEntryScreen({Key? key}) : super(key: key);
+  const PostAdEntryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -126,9 +126,9 @@ class PostAdEntryScreen extends HookConsumerWidget {
             user.studentIdPhotoUrl != null && user.studentIdPhotoUrl!.isNotEmpty &&
             user.location != null && user.location!.isNotEmpty;
           final bool locked = user == null || !user.verified || !profileComplete;
-          final bool pendingVerification = profileComplete && user != null && !user.verified;
+          final bool pendingVerification = profileComplete && !user.verified;
           // Debug prints
-          debugPrint('User: ' + (user?.toMap().toString() ?? 'null'));
+          debugPrint('User: ${user?.toMap().toString() ?? 'null'}');
           debugPrint('profileComplete: $profileComplete');
           debugPrint('locked: $locked');
           debugPrint('pendingVerification: $pendingVerification');
@@ -194,7 +194,7 @@ class PostAdEntryScreen extends HookConsumerWidget {
 class _PendingOrLockedMessage extends StatefulWidget {
   final bool pendingVerification;
   final VoidCallback onProfileTap;
-  const _PendingOrLockedMessage({Key? key, required this.pendingVerification, required this.onProfileTap}) : super(key: key);
+  const _PendingOrLockedMessage({super.key, required this.pendingVerification, required this.onProfileTap});
 
   @override
   State<_PendingOrLockedMessage> createState() => _PendingOrLockedMessageState();

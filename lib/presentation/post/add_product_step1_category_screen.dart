@@ -5,7 +5,7 @@ import '../../application/add_product_provider.dart';
 import 'listing_access_guard.dart';
 
 class AddProductStep1CategoryScreen extends HookConsumerWidget {
-  const AddProductStep1CategoryScreen({Key? key}) : super(key: key);
+  const AddProductStep1CategoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

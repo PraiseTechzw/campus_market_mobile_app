@@ -8,7 +8,7 @@ import '../core/app_theme.dart';
 import 'package:go_router/go_router.dart';
 
 class ProductFeedScreen extends ConsumerWidget {
-  const ProductFeedScreen({Key? key}) : super(key: key);
+  const ProductFeedScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,7 +45,7 @@ class ProductFeedScreen extends ConsumerWidget {
 
 class ProductListTile extends StatelessWidget {
   final ProductEntity product;
-  const ProductListTile({Key? key, required this.product}) : super(key: key);
+  const ProductListTile({super.key, required this.product});
 
   @override
   Widget build(BuildContext context) {

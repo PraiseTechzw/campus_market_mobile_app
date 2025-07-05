@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
 class AddProductStep3CustomFieldsScreen extends HookConsumerWidget {
-  const AddProductStep3CustomFieldsScreen({Key? key}) : super(key: key);
+  const AddProductStep3CustomFieldsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

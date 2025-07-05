@@ -13,7 +13,7 @@ import '../../application/profile_provider.dart';
 class ProfileCompletionScreen extends ConsumerStatefulWidget {
   final String email;
   final String name;
-  const ProfileCompletionScreen({Key? key, required this.email, required this.name}) : super(key: key);
+  const ProfileCompletionScreen({super.key, required this.email, required this.name});
 
   @override
   ConsumerState<ProfileCompletionScreen> createState() => _ProfileCompletionScreenState();

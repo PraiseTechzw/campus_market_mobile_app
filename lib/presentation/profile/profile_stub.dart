@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 
 class ProfileStub extends StatelessWidget {
-  const ProfileStub({Key? key}) : super(key: key);
+  const ProfileStub({super.key});
 
   @override
   Widget build(BuildContext context) {

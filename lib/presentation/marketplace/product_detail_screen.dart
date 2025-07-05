@@ -54,11 +54,11 @@ class ProductDetailScreen extends HookConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image carousel with enhanced styling
-            Container(
+            SizedBox(
               height: 300,
               width: double.infinity,
               child: Stack(
-                children: [
+        children: [
                   if (product.imageUrls.isNotEmpty)
                     CarouselSlider(
                       options: CarouselOptions(
@@ -96,15 +96,15 @@ class ProductDetailScreen extends HookConsumerWidget {
                       }).toList(),
                     )
                   else
-                    Hero(
-                      tag: 'product-image-${product.id}',
+          Hero(
+            tag: 'product-image-${product.id}',
                       child: Container(
                         width: double.infinity,
                         height: 300,
                         decoration: BoxDecoration(
                           color: Colors.grey[300],
                         ),
-                        child: product.imageUrl.isNotEmpty
+              child: product.imageUrl.isNotEmpty
                             ? ClipRRect(
                                 child: Image.network(
                                   product.imageUrl, 
@@ -239,8 +239,8 @@ class ProductDetailScreen extends HookConsumerWidget {
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 16),
+          ),
+          const SizedBox(height: 16),
                   
                   // Location and time
                   Row(
@@ -348,7 +348,7 @@ class ProductDetailScreen extends HookConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        '${product.rating.toStringAsFixed(1)}',
+                        product.rating.toStringAsFixed(1),
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -472,10 +472,10 @@ class ProductDetailScreen extends HookConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
+          Row(
+            children: [
                         Icon(Icons.location_on, color: primaryColor, size: 20),
-                        const SizedBox(width: 8),
+              const SizedBox(width: 8),
                         const Text(
                           'Meetup Location',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -526,12 +526,12 @@ class ProductDetailScreen extends HookConsumerWidget {
                         'Seller Information',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  sellerAsync.connectionState == ConnectionState.waiting
+            ],
+          ),
+          const SizedBox(height: 16),
+          sellerAsync.connectionState == ConnectionState.waiting
                       ? const Center(child: CircularProgressIndicator())
-                      : sellerAsync.data != null
+              : sellerAsync.data != null
                           ? Column(
                               children: [
                                 Row(
@@ -582,10 +582,10 @@ class ProductDetailScreen extends HookConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                                  Expanded(
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.chat),
                   label: const Text('Message'),
@@ -696,13 +696,13 @@ class ProductDetailScreen extends HookConsumerWidget {
                       ),
                       onPressed: () {
                         Share.share('Check out this product: ${product.name} - \$${product.price.toStringAsFixed(2)}');
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.report),
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.report),
                       label: const Text('Report'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -724,15 +724,15 @@ class ProductDetailScreen extends HookConsumerWidget {
                             ],
                           ),
                         );
-                      },
-                    ),
-                  ),
-                ],
+                  },
+                ),
               ),
+            ],
+          ),
             ),
             
             const SizedBox(height: 32),
-          ],
+        ],
         ),
       ),
     );

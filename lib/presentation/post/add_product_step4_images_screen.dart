@@ -10,7 +10,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter/cupertino.dart';
 
 class AddProductStep4ImagesScreen extends HookConsumerWidget {
-  const AddProductStep4ImagesScreen({Key? key}) : super(key: key);
+  const AddProductStep4ImagesScreen({super.key});
 
   Future<String> _uploadImage(File file, void Function(double) onProgress) async {
     final ref = FirebaseStorage.instance.ref('product_images/${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}');

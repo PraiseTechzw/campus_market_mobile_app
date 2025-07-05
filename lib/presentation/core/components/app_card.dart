@@ -6,11 +6,11 @@ class AppCard extends StatelessWidget {
   final double elevation;
 
   const AppCard({
-    Key? key,
+    super.key,
     required this.child,
     this.padding,
     this.elevation = 2,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

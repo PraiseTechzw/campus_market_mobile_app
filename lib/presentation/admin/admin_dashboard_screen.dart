@@ -6,7 +6,7 @@ import '../core/app_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
+  const AdminDashboardScreen({super.key});
 
   Future<void> _updateVerification(String userId, String status) async {
     await FirebaseFirestore.instance.collection('users').doc(userId).update({'verificationStatus': status});

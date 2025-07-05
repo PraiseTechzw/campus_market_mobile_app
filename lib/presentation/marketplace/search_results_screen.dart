@@ -8,7 +8,7 @@ import 'package:campus_market/domain/product_entity.dart';
 
 class SearchResultsScreen extends HookConsumerWidget {
   final String initialQuery;
-  const SearchResultsScreen({Key? key, required this.initialQuery}) : super(key: key);
+  const SearchResultsScreen({super.key, required this.initialQuery});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

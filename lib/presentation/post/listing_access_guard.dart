@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 
 class ListingAccessGuard extends HookConsumerWidget {
   final Widget child;
-  const ListingAccessGuard({Key? key, required this.child}) : super(key: key);
+  const ListingAccessGuard({super.key, required this.child});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

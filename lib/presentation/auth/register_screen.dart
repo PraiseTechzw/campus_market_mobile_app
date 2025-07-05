@@ -10,7 +10,7 @@ import 'verification_success_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
-  const RegisterScreen({Key? key}) : super(key: key);
+  const RegisterScreen({super.key});
 
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();

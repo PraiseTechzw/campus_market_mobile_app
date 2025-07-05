@@ -13,7 +13,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class MarketplaceScreen extends HookConsumerWidget {
-  const MarketplaceScreen({Key? key}) : super(key: key);
+  const MarketplaceScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

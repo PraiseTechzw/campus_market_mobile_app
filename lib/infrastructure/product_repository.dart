@@ -74,7 +74,7 @@ class ProductRepository {
         final userDoc = await firestore.collection('users').doc(product.sellerId).get();
         final data = userDoc.data();
         if (userDoc.exists && data is Map<String, dynamic>) {
-          final map = data as Map<String, dynamic>;
+          final map = data;
           if (map['isVerified'] == true) {
             filtered.add(product);
           }

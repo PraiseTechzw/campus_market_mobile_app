@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'listing_access_guard.dart';
 
 class AddRoomStep1TypeScreen extends HookConsumerWidget {
-  const AddRoomStep1TypeScreen({Key? key}) : super(key: key);
+  const AddRoomStep1TypeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

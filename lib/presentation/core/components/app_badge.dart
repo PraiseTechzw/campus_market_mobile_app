@@ -7,11 +7,11 @@ class AppBadge extends StatelessWidget {
   final IconData? icon;
 
   const AppBadge({
-    Key? key,
+    super.key,
     required this.text,
     this.color,
     this.icon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

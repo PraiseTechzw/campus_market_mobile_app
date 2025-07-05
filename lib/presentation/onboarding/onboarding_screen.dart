@@ -145,7 +145,7 @@ class _OnboardingPageData {
 
 class _OnboardingPage extends StatelessWidget {
   final _OnboardingPageData data;
-  const _OnboardingPage({Key? key, required this.data}) : super(key: key);
+  const _OnboardingPage({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {

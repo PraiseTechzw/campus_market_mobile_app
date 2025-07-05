@@ -5,18 +5,19 @@ import '../../application/chat_providers.dart';
 import '../../domain/chat_entity.dart';
 import '../../domain/message_entity.dart';
 import '../../domain/product_entity.dart';
-import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../marketplace/product_detail_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 
 class ChatScreen extends HookConsumerWidget {
   final ChatEntity chat;
-  const ChatScreen({Key? key, required this.chat}) : super(key: key);
+  const ChatScreen({super.key, required this.chat});
 
   Future<String> _getAddressFromCoordinates(double latitude, double longitude) async {
     // Simplified geocoding - in a real app, you'd use a proper geocoding service
@@ -58,7 +59,7 @@ class ChatScreen extends HookConsumerWidget {
         final imageUrl = await _uploadImageToStorage(image);
         
         // Send image message
-        await ref.read(sendMessageProvider({
+        ref.read(sendMessageProvider({
           'chatId': chatId,
           'content': imageUrl,
           'messageType': 'image',
@@ -118,7 +119,7 @@ class ChatScreen extends HookConsumerWidget {
 
       isLoading.value = true;
       try {
-        await ref.read(sendMessageProvider({
+        ref.read(sendMessageProvider({
           'chatId': chat.id,
           'content': message,
           'messageType': 'text',
@@ -181,7 +182,7 @@ class ChatScreen extends HookConsumerWidget {
                 Navigator.of(context).pop();
                 isLoading.value = true;
                 try {
-                  await ref.read(sendOfferProvider({
+                  ref.read(sendOfferProvider({
                     'chatId': chat.id,
                     'offerAmount': amount,
                     'message': messageController.text.trim(),
@@ -201,7 +202,7 @@ class ChatScreen extends HookConsumerWidget {
       );
     }
 
-    Future<void> _sendLocation() async {
+    Future<void> sendLocation() async {
       try {
         // Check location permission
         LocationPermission permission = await Geolocator.checkPermission();
@@ -255,7 +256,7 @@ class ChatScreen extends HookConsumerWidget {
         }
 
         // Send location
-        await ref.read(sendLocationProvider({
+        ref.read(sendLocationProvider({
           'chatId': chat.id,
           'latitude': position.latitude,
           'longitude': position.longitude,
@@ -276,7 +277,7 @@ class ChatScreen extends HookConsumerWidget {
       }
     }
 
-    Future<void> _sendImage() async {
+    Future<void> sendImage() async {
       final ImagePicker picker = ImagePicker();
       
       await showModalBottomSheet(
@@ -497,11 +498,11 @@ class ChatScreen extends HookConsumerWidget {
                   icon: Icon(Icons.attach_money, color: primaryColor),
                 ),
                 IconButton(
-                  onPressed: _sendLocation,
+                  onPressed: sendLocation,
                   icon: Icon(Icons.location_on, color: primaryColor),
                 ),
                 IconButton(
-                  onPressed: _sendImage,
+                  onPressed: sendImage,
                   icon: Icon(Icons.image, color: primaryColor),
                 ),
                 Expanded(
@@ -789,11 +790,79 @@ class ChatScreen extends HookConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
+            leading: const Icon(Icons.share),
+            title: const Text('Share Chat'),
+            onTap: () async {
+              Navigator.of(context).pop();
+              try {
+                await Share.share(
+                  'Check out this product: ${chat.productName} - \$${chat.productPrice.toStringAsFixed(2)}',
+                  subject: 'Campus Market Product',
+                );
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to share: $e')),
+                  );
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.phone),
+            title: const Text('Call User'),
+            onTap: () async {
+              Navigator.of(context).pop();
+              // In a real app, you'd get the user's phone number from their profile
+              // For now, we'll show a dialog to enter a number
+              final phoneController = TextEditingController();
+              await showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Call User'),
+                  content: TextField(
+                    controller: phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone Number',
+                      hintText: 'Enter phone number',
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final phone = phoneController.text.trim();
+                        if (phone.isNotEmpty) {
+                          Navigator.of(context).pop();
+                          final url = 'tel:$phone';
+                          if (await canLaunchUrl(Uri.parse(url))) {
+                            await launchUrl(Uri.parse(url));
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Could not launch phone app')),
+                              );
+                            }
+                          }
+                        }
+                      },
+                      child: const Text('Call'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.delete),
             title: const Text('Delete Chat'),
             onTap: () async {
               Navigator.of(context).pop();
-              await ref.read(deleteChatProvider(chat.id));
+              ref.read(deleteChatProvider(chat.id));
               if (context.mounted) {
                 Navigator.of(context).pop();
               }
@@ -818,7 +887,7 @@ class ChatScreen extends HookConsumerWidget {
                       onPressed: () async {
                         Navigator.of(context).pop();
                         try {
-                          await ref.read(blockUserProvider(otherUserInfo['id']!));
+                          ref.read(blockUserProvider(otherUserInfo['id']!));
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('User blocked successfully')),
@@ -856,7 +925,7 @@ class ChatScreen extends HookConsumerWidget {
 
   Future<void> _respondToOffer(BuildContext context, String messageId, bool accepted, WidgetRef ref) async {
     try {
-      await ref.read(respondToOfferProvider({
+      ref.read(respondToOfferProvider({
         'chatId': chat.id,
         'messageId': messageId,
         'accepted': accepted,
@@ -928,7 +997,7 @@ class ChatScreen extends HookConsumerWidget {
 
               Navigator.of(dialogContext).pop();
               try {
-                await ref.read(reportUserProvider({
+                ref.read(reportUserProvider({
                   'reportedUserId': otherUserInfo['id']!,
                   'reason': reasonController.text.trim(),
                   'details': detailsController.text.trim(),

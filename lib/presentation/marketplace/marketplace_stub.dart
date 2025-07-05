@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 
 class MarketplaceStub extends StatelessWidget {
-  const MarketplaceStub({Key? key}) : super(key: key);
+  const MarketplaceStub({super.key});
 
   @override
   Widget build(BuildContext context) {

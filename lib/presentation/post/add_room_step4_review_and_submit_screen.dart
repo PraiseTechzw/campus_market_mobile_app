@@ -10,7 +10,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import '../../presentation/core/app_router.dart';
 
 class AddRoomStep4ReviewAndSubmitScreen extends HookConsumerWidget {
-  const AddRoomStep4ReviewAndSubmitScreen({Key? key}) : super(key: key);
+  const AddRoomStep4ReviewAndSubmitScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

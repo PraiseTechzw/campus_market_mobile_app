@@ -7,7 +7,7 @@ import 'chat_screen.dart';
 import 'package:go_router/go_router.dart';
 
 class ChatListScreen extends HookConsumerWidget {
-  const ChatListScreen({Key? key}) : super(key: key);
+  const ChatListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

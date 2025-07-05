@@ -7,7 +7,7 @@ import 'product_detail_screen.dart';
 import 'package:go_router/go_router.dart';
 
 class FavoritesScreen extends HookConsumerWidget {
-  const FavoritesScreen({Key? key}) : super(key: key);
+  const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

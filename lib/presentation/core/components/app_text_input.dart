@@ -11,7 +11,7 @@ class AppTextInput extends StatelessWidget {
   final Widget? suffixIcon;
 
   const AppTextInput({
-    Key? key,
+    super.key,
     required this.label,
     required this.controller,
     this.obscureText = false,
@@ -19,7 +19,7 @@ class AppTextInput extends StatelessWidget {
     this.validator,
     this.icon,
     this.suffixIcon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
