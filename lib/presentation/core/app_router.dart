@@ -28,6 +28,7 @@ import '../post/add_room_step2_details_screen.dart';
 import '../post/add_room_step3_images_screen.dart';
 import '../post/add_room_step4_review_and_submit_screen.dart';
 import '../chat/chat_stub.dart';
+import '../marketplace/favorites_screen.dart';
 
 // Custom ChangeNotifier to bridge a Stream to Listenable for go_router
 class StreamChangeNotifier extends ChangeNotifier {
@@ -160,6 +161,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/chat',
         builder: (context, state) => const ChatStub(),
+      ),
+      GoRoute(
+        path: '/favorites',
+        builder: (context, state) => const FavoritesScreen(),
       ),
     ],
     redirect: (context, state) {

@@ -46,7 +46,7 @@ class AddProductStep5ReviewAndSubmitScreen extends HookConsumerWidget {
           rating: 0.0,
           reviewCount: 0,
           status: 'Available',
-          meetupLocation: '',
+          meetupLocation: state.meetupLocation ?? '',
         );
         await repo.addProduct(product);
         if (context.mounted) {
@@ -216,6 +216,25 @@ class AddProductStep5ReviewAndSubmitScreen extends HookConsumerWidget {
                                       ],
                                     ),
                                   const SizedBox(height: 12),
+                                  if (state.meetupLocation?.isNotEmpty == true) ...[
+                                    Row(
+                                      children: [
+                                        Icon(Icons.location_on, color: primaryColor),
+                                        const SizedBox(width: 8),
+                                        const Text('Meetup Location', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: primaryColor.withOpacity(0.08),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(state.meetupLocation!),
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
                                   Row(
                                     children: [
                                       Icon(Icons.image, color: primaryColor),
