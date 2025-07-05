@@ -15,6 +15,7 @@ class ProductDetailScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final primaryColor = const Color(0xFF32CD32);
     final sellerFuture = useMemoized(() async {
       final doc = await FirebaseFirestore.instance.collection('users').doc(product.sellerId).get();
       return doc.data();
