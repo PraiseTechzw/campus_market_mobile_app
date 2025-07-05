@@ -137,68 +137,122 @@ class ChatScreen extends HookConsumerWidget {
     Future<void> sendOffer() async {
       final offerController = TextEditingController();
       final messageController = TextEditingController();
-      
-      await showDialog(
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final primaryColor = const Color(0xFF32CD32);
+      await showModalBottomSheet(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Make an Offer'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: offerController,
-                decoration: const InputDecoration(
-                  labelText: 'Offer Amount (\$)',
-                  prefixText: '\$',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: messageController,
-                decoration: const InputDecoration(
-                  labelText: 'Message (Optional)',
-                  hintText: 'Add a message with your offer...',
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
-            ElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(offerController.text);
-                if (amount == null || amount <= 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a valid amount')),
-                  );
-                  return;
-                }
-
-                Navigator.of(context).pop();
-                isLoading.value = true;
-                try {
-                  ref.read(sendOfferProvider({
-                    'chatId': chat.id,
-                    'offerAmount': amount,
-                    'message': messageController.text.trim(),
-                  }));
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to send offer: $e')),
-                  );
-                } finally {
-                  isLoading.value = false;
-                }
-              },
-              child: const Text('Send Offer'),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[900] : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(context).pop(),
+                        tooltip: 'Cancel',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Make an Offer',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: offerController,
+                    decoration: InputDecoration(
+                      labelText: 'Offer Amount',
+                      prefixText: '\$',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: messageController,
+                    decoration: InputDecoration(
+                      labelText: 'Message (Optional)',
+                      hintText: 'Add a message with your offer...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: () async {
+                        final amount = double.tryParse(offerController.text);
+                        if (amount == null || amount <= 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter a valid amount')),
+                          );
+                          return;
+                        }
+                        Navigator.of(context).pop();
+                        isLoading.value = true;
+                        try {
+                          ref.read(sendOfferProvider({
+                            'chatId': chat.id,
+                            'offerAmount': amount,
+                            'message': messageController.text.trim(),
+                          }));
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to send offer: $e')),
+                          );
+                        } finally {
+                          isLoading.value = false;
+                        }
+                      },
+                      child: const Text('Send Offer', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
       );
     }
 
@@ -483,67 +537,83 @@ class ChatScreen extends HookConsumerWidget {
           ),
           
           // Message input
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[900] : Colors.white,
-              border: Border(
-                top: BorderSide(color: Colors.grey[300]!),
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[900] : Colors.white,
+                border: Border(top: BorderSide(color: isDark ? Colors.grey[800]! : Colors.grey[300]!)),
               ),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: sendOffer,
-                  icon: Icon(Icons.attach_money, color: primaryColor),
-                ),
-                IconButton(
-                  onPressed: sendLocation,
-                  icon: Icon(Icons.location_on, color: primaryColor),
-                ),
-                IconButton(
-                  onPressed: sendImage,
-                  icon: Icon(Icons.image, color: primaryColor),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                    maxLines: null,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => sendMessage(),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.attach_money, color: primaryColor),
+                    tooltip: 'Make Offer',
+                    onPressed: sendOffer,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    shape: BoxShape.circle,
+                  IconButton(
+                    icon: Icon(Icons.location_on, color: primaryColor),
+                    tooltip: 'Send Location',
+                    onPressed: sendLocation,
                   ),
-                  child: IconButton(
-                    onPressed: isLoading.value ? null : sendMessage,
-                    icon: isLoading.value
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  IconButton(
+                    icon: Icon(Icons.image, color: primaryColor),
+                    tooltip: 'Send Image',
+                    onPressed: sendImage,
+                  ),
+                  Expanded(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 40, maxHeight: 120),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[800] : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: messageController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Type a message...',
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                ),
+                                minLines: 1,
+                                maxLines: 5,
+                                textInputAction: TextInputAction.send,
+                                onSubmitted: (_) => sendMessage(),
+                              ),
                             ),
-                          )
-                        : const Icon(Icons.send, color: Colors.white),
+                            const SizedBox(width: 2),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 2),
+                              child: IconButton(
+                                icon: isLoading.value
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                                        ),
+                                      )
+                                    : Icon(Icons.send, color: primaryColor),
+                                onPressed: isLoading.value ? null : sendMessage,
+                                tooltip: 'Send',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

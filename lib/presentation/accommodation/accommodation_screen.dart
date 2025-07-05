@@ -122,11 +122,6 @@ class _AccommodationScreenState extends State<AccommodationScreen> {
                         _searchQuery = value;
                       });
                     },
-                    onSubmitted: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
                   ),
                 ),
               ],
@@ -136,82 +131,134 @@ class _AccommodationScreenState extends State<AccommodationScreen> {
           Expanded(
             child: Consumer(
               builder: (context, ref, child) {
-                final roomsAsync = _searchQuery.isNotEmpty
-                    ? ref.watch(searchRoomsProvider(_searchQuery))
-                    : ref.watch(filteredRoomsProvider);
+                final filter = ref.watch(accommodationFilterProvider);
+                final roomsAsync = ref.watch(filteredRoomsProvider);
 
-                return roomsAsync.when(
-                  data: (rooms) {
-                    if (rooms.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                Future<void> _refresh() async {
+                  await ref.refresh(filteredRoomsProvider.future);
+                }
+
+                return RefreshIndicator(
+                  onRefresh: _refresh,
+                  child: roomsAsync.when(
+                    data: (rooms) {
+                      // Client-side search, filter, and sort
+                      var filteredRooms = rooms;
+                      if (_searchQuery.isNotEmpty) {
+                        final q = _searchQuery.toLowerCase();
+                        filteredRooms = filteredRooms.where((room) =>
+                          room.location.toLowerCase().contains(q) ||
+                          room.description.toLowerCase().contains(q)
+                        ).toList();
+                      }
+                      if (filter.school != null && filter.school!.isNotEmpty) {
+                        filteredRooms = filteredRooms.where((room) => room.school == filter.school).toList();
+                      }
+                      if (filter.campus != null && filter.campus!.isNotEmpty) {
+                        filteredRooms = filteredRooms.where((room) => room.campus == filter.campus).toList();
+                      }
+                      if (filter.city != null && filter.city!.isNotEmpty) {
+                        filteredRooms = filteredRooms.where((room) => room.city == filter.city).toList();
+                      }
+                      if (filter.type != null && filter.type!.isNotEmpty) {
+                        filteredRooms = filteredRooms.where((room) => room.type == filter.type).toList();
+                      }
+                      if (filter.amenities != null && filter.amenities!.isNotEmpty) {
+                        filteredRooms = filteredRooms.where((room) =>
+                          filter.amenities!.every((a) => room.amenities.contains(a))
+                        ).toList();
+                      }
+                      if (filter.minPrice != null) {
+                        filteredRooms = filteredRooms.where((room) => room.price >= filter.minPrice!).toList();
+                      }
+                      if (filter.maxPrice != null) {
+                        filteredRooms = filteredRooms.where((room) => room.price <= filter.maxPrice!).toList();
+                      }
+                      // Sort
+                      if (filter.sortBy == 'price') {
+                        filteredRooms.sort((a, b) => filter.descending ? b.price.compareTo(a.price) : a.price.compareTo(b.price));
+                      } else if (filter.sortBy == 'createdAt') {
+                        filteredRooms.sort((a, b) => filter.descending ? b.createdAt.compareTo(a.createdAt) : a.createdAt.compareTo(b.createdAt));
+                      }
+
+                      if (filteredRooms.isEmpty) {
+                        return ListView(
                           children: [
-                            Icon(
-                              Icons.home_work_outlined,
-                              size: 80,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'No rooms found for "$_searchQuery"'
-                                  : 'No rooms available',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'Try adjusting your search terms'
-                                  : 'Check back later for new listings',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[500],
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.4,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.home_work_outlined,
+                                      size: 80,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      _searchQuery.isNotEmpty
+                                          ? 'No rooms found for "$_searchQuery"'
+                                          : 'No rooms available',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _searchQuery.isNotEmpty
+                                          ? 'Try adjusting your search terms'
+                                          : 'Check back later for new listings',
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
-                        ),
-                      );
-                    }
-
-                    return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: rooms.length,
-                      itemBuilder: (context, index) {
-                        final room = rooms[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: RoomCard(room: room),
                         );
-                      },
-                    );
-                  },
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  error: (error, stack) => Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 80,
-                          color: Colors.red[300],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading rooms',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.red[600],
+                      }
+
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: filteredRooms.length,
+                        itemBuilder: (context, index) {
+                          final room = filteredRooms[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: RoomCard(room: room),
+                          );
+                        },
+                      );
+                    },
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    error: (error, stack) => Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 80,
+                            color: Colors.red[300],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        AppButton(
-                          onPressed: () => ref.refresh(filteredRoomsProvider),
-                          text: 'Retry',
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading rooms',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.red[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          AppButton(
+                            onPressed: () => ref.refresh(filteredRoomsProvider),
+                            text: 'Retry',
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );

@@ -25,6 +25,49 @@ final bookRoomProvider = FutureProvider.family<void, Map<String, String>>((ref, 
   await repo.bookRoom(roomId, userId);
 });
 
+// Provider for available filter options
+final filterOptionsProvider = FutureProvider<Map<String, List<String>>>((ref) async {
+  final rooms = await ref.watch(roomListProvider.future);
+  
+  final schools = rooms.map((room) => room.school).where((school) => school.isNotEmpty).toSet().toList()..sort();
+  final campuses = rooms.map((room) => room.campus).where((campus) => campus.isNotEmpty).toSet().toList()..sort();
+  final cities = rooms.map((room) => room.city).where((city) => city.isNotEmpty).toSet().toList()..sort();
+  final types = rooms.map((room) => room.type).where((type) => type.isNotEmpty).toSet().toList()..sort();
+  
+  // Get all unique amenities from all rooms
+  final allAmenities = <String>{};
+  for (final room in rooms) {
+    allAmenities.addAll(room.amenities);
+  }
+  final amenities = allAmenities.toList()..sort();
+  
+  return {
+    'schools': schools,
+    'campuses': campuses,
+    'cities': cities,
+    'types': types,
+    'amenities': amenities,
+  };
+});
+
+// Provider for price range
+final priceRangeProvider = FutureProvider<Map<String, double>>((ref) async {
+  final rooms = await ref.watch(roomListProvider.future);
+  
+  if (rooms.isEmpty) {
+    return {'min': 0.0, 'max': 2000.0};
+  }
+  
+  final prices = rooms.map((room) => room.price).toList();
+  final minPrice = prices.reduce((a, b) => a < b ? a : b);
+  final maxPrice = prices.reduce((a, b) => a > b ? a : b);
+  
+  return {
+    'min': minPrice,
+    'max': maxPrice,
+  };
+});
+
 // Accommodation filter state
 class AccommodationFilter {
   final String? school;
@@ -110,23 +153,12 @@ final accommodationFilterProvider = StateNotifierProvider<AccommodationFilterNot
   return AccommodationFilterNotifier();
 });
 
-// Provider for filtered rooms
+// Provider for filtered rooms (now just fetches all rooms, filtering is client-side)
 final filteredRoomsProvider = StreamProvider<List<RoomEntity>>((ref) {
-  final filter = ref.watch(accommodationFilterProvider);
-  return ref.watch(roomRepositoryProvider).fetchFilteredRooms(
-    school: filter.school,
-    campus: filter.campus,
-    city: filter.city,
-    type: filter.type,
-    amenities: filter.amenities,
-    minPrice: filter.minPrice,
-    maxPrice: filter.maxPrice,
-    sortBy: filter.sortBy,
-    descending: filter.descending,
-  );
+  return ref.watch(roomRepositoryProvider).fetchRooms();
 });
 
-// Provider for room search
+// Provider for room search (now just fetches all rooms, search is client-side)
 final searchRoomsProvider = StreamProvider.family<List<RoomEntity>, String>((ref, query) {
-  return ref.watch(roomRepositoryProvider).searchRooms(query);
+  return ref.watch(roomRepositoryProvider).fetchRooms();
 }); 

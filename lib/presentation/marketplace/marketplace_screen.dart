@@ -3,12 +3,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:campus_market/application/product_providers.dart';
 import 'package:campus_market/application/profile_provider.dart';
+import 'package:campus_market/application/user_providers.dart';
 import 'package:campus_market/domain/product_entity.dart';
 import 'package:campus_market/domain/user_entity.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'filter_modal_screen.dart';
-import 'package:campus_market/application/user_providers.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
@@ -58,6 +57,10 @@ class MarketplaceScreen extends HookConsumerWidget {
     }
     print('DEBUG: productsAsync value: $productsAsync');
 
+    final searchController = useTextEditingController();
+    final searchFocus = useFocusNode();
+    final searchQuery = useState('');
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: isDark ? Colors.black : Colors.white,
@@ -65,8 +68,25 @@ class MarketplaceScreen extends HookConsumerWidget {
           decoration: BoxDecoration(
             color: isDark ? Colors.grey[800] : Colors.grey[100],
             borderRadius: BorderRadius.circular(12),
+            boxShadow: searchFocus.hasFocus || searchQuery.value.isNotEmpty
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF32CD32).withOpacity(0.6),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : [],
+            border: Border.all(
+              color: (searchFocus.hasFocus || searchQuery.value.isNotEmpty)
+                  ? const Color(0xFF32CD32)
+                  : Colors.transparent,
+              width: 2,
+            ),
           ),
           child: TextField(
+            controller: searchController,
+            focusNode: searchFocus,
           decoration: InputDecoration(
               hintText: '🔍 Search products...',
             prefixIcon: Icon(Icons.search, color: isDark ? Colors.white70 : Colors.black54),
@@ -74,10 +94,8 @@ class MarketplaceScreen extends HookConsumerWidget {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           style: TextStyle(color: isDark ? Colors.white : Colors.black),
-          onSubmitted: (query) {
-            if (query.trim().isNotEmpty) {
-              context.push('/search', extra: query.trim());
-            }
+            onChanged: (query) {
+              searchQuery.value = query;
           },
           ),
         ),
@@ -141,7 +159,13 @@ class MarketplaceScreen extends HookConsumerWidget {
                       ),
                       selected: selected,
                       selectedColor: primaryColor.withOpacity(0.2),
-                      onSelected: (_) => selectedCategory.value = cat['name'] as String,
+                      onSelected: (_) {
+                        selectedCategory.value = cat['name'] as String;
+                        filters.value = {
+                          ...filters.value,
+                          'category': cat['name'] as String,
+                        };
+                      },
                       labelStyle: TextStyle(
                         color: selected ? primaryColor : (isDark ? Colors.white : Colors.black),
                       ),
@@ -235,9 +259,20 @@ class MarketplaceScreen extends HookConsumerWidget {
                   filtered = filtered.where((p) => p.condition == filtersValue['condition']).toList();
                 }
                 
-                // Price range filter
+                // Price range filter (always start from 0)
                 final priceRange = filtersValue['priceRange'] as RangeValues? ?? const RangeValues(0, 100000);
-                filtered = filtered.where((p) => p.price >= priceRange.start && p.price <= priceRange.end).toList();
+                final minPrice = 0.0;
+                final maxPrice = priceRange.end;
+                filtered = filtered.where((p) => p.price >= minPrice && p.price <= maxPrice).toList();
+                
+                // Search filter
+                if (searchQuery.value.trim().isNotEmpty) {
+                  final q = searchQuery.value.trim().toLowerCase();
+                  filtered = filtered.where((p) =>
+                    p.name.toLowerCase().contains(q) ||
+                    p.description.toLowerCase().contains(q)
+                  ).toList();
+                }
                 
                 // Sort
                 switch (filtersValue['sort']) {
@@ -281,12 +316,7 @@ class MarketplaceScreen extends HookConsumerWidget {
                         itemBuilder: (context, index) {
                           final product = filtered[index];
                           final isNew = DateTime.now().difference(product.createdAt).inDays < 7;
-                          final favoritesAsync = ref.watch(userFavoritesProvider);
-                          final isFavorite = favoritesAsync.when(
-                            data: (favorites) => favorites.contains(product.id),
-                            loading: () => false,
-                            error: (_, __) => false,
-                          );
+                          final sellerAsync = ref.watch(sellerDataProvider(product.sellerId));
                           
                           return GestureDetector(
                             onTap: () {
@@ -304,6 +334,7 @@ class MarketplaceScreen extends HookConsumerWidget {
                                   ),
                                 ],
                               ),
+                              clipBehavior: Clip.hardEdge,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -315,8 +346,8 @@ class MarketplaceScreen extends HookConsumerWidget {
                                           topRight: Radius.circular(16),
                                         ),
                                         child: product.imageUrls.isNotEmpty
-                                            ? Image.network(product.imageUrls.first, height: 140, width: double.infinity, fit: BoxFit.cover)
-                                            : Container(height: 140, color: Colors.grey[300]),
+                                            ? Image.network(product.imageUrls.first, height: 130, width: double.infinity, fit: BoxFit.cover)
+                                            : Container(height: 130, color: Colors.grey[300]),
                                       ),
                                       Positioned(
                                         top: 8,
@@ -346,27 +377,6 @@ class MarketplaceScreen extends HookConsumerWidget {
                                             child: const Text(
                                               'NEW',
                                               style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                        ),
-                                      Positioned(
-                                        top: 8,
-                                        right: isNew ? 60 : 8,
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            ref.read(toggleFavoriteProvider(product.id));
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.all(4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(0.9),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              isFavorite ? Icons.favorite : Icons.favorite_border,
-                                              color: isFavorite ? Colors.red : Colors.grey,
-                                              size: 20,
-                                            ),
                                           ),
                                         ),
                                       ),
@@ -396,8 +406,8 @@ class MarketplaceScreen extends HookConsumerWidget {
                                         children: [
                                           Text(
                                             product.name, 
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                            maxLines: 2,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                            maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                           const SizedBox(height: 2),
@@ -407,32 +417,70 @@ class MarketplaceScreen extends HookConsumerWidget {
                                                 rating: product.rating,
                                                 itemBuilder: (context, index) => const Icon(Icons.star, color: Colors.amber),
                                                 itemCount: 5,
-                                                itemSize: 12.0,
+                                                itemSize: 10.0,
                                               ),
                                               const SizedBox(width: 4),
-                                              Text('(${product.reviewCount})', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                              Text('(${product.reviewCount})', style: const TextStyle(fontSize: 9, color: Colors.grey)),
                                             ],
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
                                             '\$${product.price.toStringAsFixed(2)}', 
-                                            style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 14),
+                                            style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
                                           ),
                                           const SizedBox(height: 2),
-                                          Text(
-                                            product.condition, 
-                                            style: const TextStyle(fontSize: 10, color: Colors.grey),
-                                          ),
-                                          if (product.meetupLocation.isNotEmpty) ...[
-                                            const SizedBox(height: 2),
-                                            Row(
+                                          // Seller information
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              CircleAvatar(
+                                                radius: 8,
+                                                backgroundImage: sellerAsync.when(
+                                                  data: (sellerData) => sellerData['selfieUrl'] != null 
+                                                      ? NetworkImage(sellerData['selfieUrl']) 
+                                                      : null,
+                                                  loading: () => null,
+                                                  error: (_, __) => null,
+                                                ),
+                                                child: sellerAsync.when(
+                                                  data: (sellerData) => sellerData['selfieUrl'] == null 
+                                                      ? const Icon(Icons.person, size: 12, color: Colors.grey)
+                                                      : null,
+                                                  loading: () => const Icon(Icons.person, size: 12, color: Colors.grey),
+                                                  error: (_, __) => const Icon(Icons.person, size: 12, color: Colors.grey),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 3),
+                                              Expanded(
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    sellerAsync.when(
+                                                      data: (sellerData) => Text(
+                                                        sellerData['name'] ?? 'Unknown',
+                                                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w500),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                      loading: () => const Text(
+                                                        'Loading...',
+                                                        style: TextStyle(fontSize: 9, color: Colors.grey),
+                                                      ),
+                                                      error: (_, __) => const Text(
+                                                        'Unknown',
+                                                        style: TextStyle(fontSize: 9, color: Colors.grey),
+                                                      ),
+                                                    ),
+                                                    Row(
+                                                      mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Icon(Icons.location_on, size: 10, color: Colors.grey),
-                                                const SizedBox(width: 2),
+                                                        Icon(Icons.school, size: 7, color: Colors.grey),
+                                                        const SizedBox(width: 1),
                                                 Expanded(
                                                   child: Text(
-                                                    product.meetupLocation,
-                                                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                                            product.school.isNotEmpty ? product.school : 'Unknown School',
+                                                            style: const TextStyle(fontSize: 7, color: Colors.grey),
                                                     maxLines: 1,
                                                     overflow: TextOverflow.ellipsis,
                                                   ),
@@ -440,6 +488,10 @@ class MarketplaceScreen extends HookConsumerWidget {
                                               ],
                                             ),
                                           ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ],
                                       ),
                                     ),

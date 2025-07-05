@@ -130,3 +130,4 @@ flutter:
 
   assets:
     - packages/country_code_picker/flags/
+    - assets/images/

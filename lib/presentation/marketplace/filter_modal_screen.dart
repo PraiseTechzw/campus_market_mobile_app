@@ -32,7 +32,8 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
     selectedCategory = widget.initialFilters['category'] ?? 'All';
     selectedCondition = widget.initialFilters['condition'] ?? 'All';
     selectedSort = widget.initialFilters['sort'] ?? 'Newest';
-    priceRange = widget.initialFilters['priceRange'] ?? const RangeValues(0, 100000);
+    final initialRange = widget.initialFilters['priceRange'] ?? const RangeValues(0, 100000);
+    priceRange = RangeValues(0, initialRange.end);
   }
 
   @override
@@ -144,7 +145,7 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
                   const SizedBox(width: 8),
                   Icon(Icons.attach_money, color: Colors.green),
                   const SizedBox(width: 8),
-                  Text('(4${priceRange.start.toInt()} - 4${priceRange.end.toInt()})', style: const TextStyle(color: Colors.green)),
+                  Text('(4${0} - 4${priceRange.end.toInt()})', style: const TextStyle(color: Colors.green)),
                 ],
               ),
             ),
@@ -266,6 +267,9 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         widget.onClear();
+                        setState(() {
+                          priceRange = const RangeValues(0, 100000);
+                        });
                         Navigator.pop(context);
                       },
                       icon: const Icon(Icons.clear),
@@ -284,7 +288,7 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
                       onPressed: () {
                         widget.onApply({
                           'category': selectedCategory,
-                          'priceRange': priceRange,
+                          'priceRange': RangeValues(0, priceRange.end),
                           'condition': selectedCondition,
                           'sort': selectedSort,
                         });
@@ -293,7 +297,7 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
                       icon: const Icon(Icons.check),
                       label: const Text('Apply Filters'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[600],
+                        backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -309,7 +313,6 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
           ],
         ),
       ),
-      ),
-    );
+    ));
   }
 } 

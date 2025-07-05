@@ -10,7 +10,11 @@ class RoomRepository {
   // Fetch all rooms
   Stream<List<RoomEntity>> fetchRooms() {
     return _rooms.orderBy('createdAt', descending: true).snapshots().map(
-      (snap) => snap.docs.map((doc) => RoomEntity.fromMap(doc.data(), doc.id)).toList(),
+      (snap) {
+        final rooms = snap.docs.map((doc) => RoomEntity.fromMap(doc.data(), doc.id)).toList();
+        print('DEBUG: fetchRooms fetched [32m${rooms.length}[0m rooms from Firestore');
+        return rooms;
+      },
     );
   }
 
@@ -48,32 +52,45 @@ class RoomRepository {
     String sortBy = 'createdAt',
     bool descending = true,
   }) {
-    // Remove all Firestore query filters, fetch all rooms
-    return _rooms.orderBy(sortBy, descending: descending).snapshots().map(
+    Query query = _rooms;
+    // Only use equality filters in Firestore query
+    if (school != null && school.isNotEmpty) {
+      query = query.where('school', isEqualTo: school);
+    }
+    if (campus != null && campus.isNotEmpty) {
+      query = query.where('campus', isEqualTo: campus);
+    }
+    if (city != null && city.isNotEmpty) {
+      query = query.where('city', isEqualTo: city);
+    }
+    if (type != null && type.isNotEmpty) {
+      query = query.where('type', isEqualTo: type);
+    }
+    // Do NOT add price range or orderBy(price) to Firestore query
+    query = query.orderBy('createdAt', descending: descending);
+    return query.snapshots().map(
       (snap) {
         var rooms = snap.docs.map((doc) => RoomEntity.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
-        // Optionally, apply client-side filtering here if needed
-        if (school != null && school.isNotEmpty) {
-          rooms = rooms.where((room) => room.school == school).toList();
-        }
-        if (campus != null && campus.isNotEmpty) {
-          rooms = rooms.where((room) => room.campus == campus).toList();
-        }
-        if (city != null && city.isNotEmpty) {
-          rooms = rooms.where((room) => room.city == city).toList();
-        }
-        if (type != null && type.isNotEmpty) {
-          rooms = rooms.where((room) => room.type == type).toList();
-        }
+        // Client-side price filtering
         if (minPrice != null) {
           rooms = rooms.where((room) => room.price >= minPrice).toList();
         }
         if (maxPrice != null) {
           rooms = rooms.where((room) => room.price <= maxPrice).toList();
         }
-        if (amenities != null && amenities.isNotEmpty) {
-          rooms = rooms.where((room) => amenities.every((a) => room.amenities.contains(a))).toList();
+        // Client-side sorting
+        if (sortBy == 'price') {
+          rooms.sort((a, b) => descending ? b.price.compareTo(a.price) : a.price.compareTo(b.price));
+        } else if (sortBy == 'createdAt') {
+          rooms.sort((a, b) => descending ? b.createdAt.compareTo(a.createdAt) : a.createdAt.compareTo(b.createdAt));
         }
+        // Amenities filter (client-side)
+        if (amenities != null && amenities.isNotEmpty) {
+          rooms = rooms.where((room) =>
+            amenities.every((amenity) => room.amenities.contains(amenity))
+          ).toList();
+        }
+        print('DEBUG: fetchFilteredRooms fetched ${rooms.length} rooms from Firestore with filters');
         return rooms;
       },
     );
@@ -82,7 +99,6 @@ class RoomRepository {
   // Keyword search (location/description)
   Stream<List<RoomEntity>> searchRooms(String keyword) {
     return _rooms
-      .where('verificationStatus', isEqualTo: 'verified')
       .where('isBooked', isEqualTo: false)
       .snapshots()
       .map((snap) => snap.docs
