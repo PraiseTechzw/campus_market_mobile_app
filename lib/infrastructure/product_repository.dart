@@ -84,4 +84,11 @@ class ProductRepository {
       return filtered;
     });
   }
+
+  // Fetch all products for a specific user
+  Stream<List<ProductEntity>> fetchUserProducts(String userId) {
+    return _products.where('sellerId', isEqualTo: userId).orderBy('createdAt', descending: true).snapshots().map(
+      (snap) => snap.docs.map((doc) => ProductEntity.fromMap(doc.data(), doc.id)).toList(),
+    );
+  }
 } 
