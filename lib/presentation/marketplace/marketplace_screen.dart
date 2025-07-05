@@ -67,18 +67,18 @@ class MarketplaceScreen extends HookConsumerWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: TextField(
-            decoration: InputDecoration(
+          decoration: InputDecoration(
               hintText: '🔍 Search products...',
-              prefixIcon: Icon(Icons.search, color: isDark ? Colors.white70 : Colors.black54),
-              border: InputBorder.none,
+            prefixIcon: Icon(Icons.search, color: isDark ? Colors.white70 : Colors.black54),
+            border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-            style: TextStyle(color: isDark ? Colors.white : Colors.black),
-            onSubmitted: (query) {
-              if (query.trim().isNotEmpty) {
-                context.push('/search', extra: query.trim());
-              }
-            },
+          ),
+          style: TextStyle(color: isDark ? Colors.white : Colors.black),
+          onSubmitted: (query) {
+            if (query.trim().isNotEmpty) {
+              context.push('/search', extra: query.trim());
+            }
+          },
           ),
         ),
         actions: [
@@ -242,10 +242,10 @@ class MarketplaceScreen extends HookConsumerWidget {
                 // Sort
                 switch (filtersValue['sort']) {
                   case 'PriceAsc':
-                    filtered.sort((a, b) => a.price.compareTo(b.price));
+                      filtered.sort((a, b) => a.price.compareTo(b.price));
                     break;
                   case 'PriceDesc':
-                    filtered.sort((a, b) => b.price.compareTo(a.price));
+                      filtered.sort((a, b) => b.price.compareTo(a.price));
                     break;
                   case 'Newest':
                   default:

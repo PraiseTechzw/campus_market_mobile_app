@@ -1,3 +1,4 @@
+import 'package:campus_market/presentation/core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -61,8 +62,8 @@ class _FilterModalScreenState extends State<FilterModalScreen> {
     };
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration:  BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),

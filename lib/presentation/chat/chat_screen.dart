@@ -1,0 +1,637 @@
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import '../../application/chat_providers.dart';
+import '../../domain/chat_entity.dart';
+import '../../domain/message_entity.dart';
+import 'package:go_router/go_router.dart';
+
+class ChatScreen extends HookConsumerWidget {
+  final ChatEntity chat;
+  const ChatScreen({Key? key, required this.chat}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final primaryColor = const Color(0xFF32CD32);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final messagesAsync = ref.watch(chatMessagesProvider(chat.id));
+    final currentUserId = ref.watch(currentUserIdProvider);
+    final otherUserInfo = ref.watch(otherUserInfoProvider(chat));
+    
+    final messageController = useTextEditingController();
+    final scrollController = useScrollController();
+    final isLoading = useState(false);
+
+    // Mark messages as read when screen opens
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(markMessagesAsReadProvider(chat.id));
+      });
+      return null;
+    }, []);
+
+    // Auto-scroll to bottom when new messages arrive
+    useEffect(() {
+      messagesAsync.whenData((messages) {
+        if (messages.isNotEmpty && scrollController.hasClients) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            scrollController.animateTo(
+              scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          });
+        }
+      });
+      return null;
+    }, [messagesAsync]);
+
+    Future<void> sendMessage() async {
+      final message = messageController.text.trim();
+      if (message.isEmpty || isLoading.value) return;
+
+      isLoading.value = true;
+      try {
+        await ref.read(sendMessageProvider({
+          'chatId': chat.id,
+          'content': message,
+          'messageType': 'text',
+        }));
+        messageController.clear();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send message: $e')),
+        );
+      } finally {
+        isLoading.value = false;
+      }
+    }
+
+    Future<void> sendOffer() async {
+      final offerController = TextEditingController();
+      final messageController = TextEditingController();
+      
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Make an Offer'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: offerController,
+                decoration: const InputDecoration(
+                  labelText: 'Offer Amount (\$)',
+                  prefixText: '\$',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: messageController,
+                decoration: const InputDecoration(
+                  labelText: 'Message (Optional)',
+                  hintText: 'Add a message with your offer...',
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final amount = double.tryParse(offerController.text);
+                if (amount == null || amount <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid amount')),
+                  );
+                  return;
+                }
+
+                Navigator.of(context).pop();
+                isLoading.value = true;
+                try {
+                  await ref.read(sendOfferProvider({
+                    'chatId': chat.id,
+                    'offerAmount': amount,
+                    'message': messageController.text.trim(),
+                  }));
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to send offer: $e')),
+                  );
+                } finally {
+                  isLoading.value = false;
+                }
+              },
+              child: const Text('Send Offer'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: isDark ? Colors.black : Colors.grey[50],
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              otherUserInfo['name'] ?? 'Unknown',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              chat.productName,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+        backgroundColor: isDark ? Colors.black : Colors.white,
+        foregroundColor: isDark ? Colors.white : Colors.black,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.more_vert, color: primaryColor),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                builder: (context) => _buildChatOptions(context, ref),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Product info header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[900] : Colors.white,
+              border: Border(
+                bottom: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    chat.productImage,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 50,
+                        height: 50,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.image, color: Colors.grey),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        chat.productName,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '\$${chat.productPrice.toStringAsFixed(2)}',
+                        style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // TODO: Navigate to product detail
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  child: const Text('View'),
+                ),
+              ],
+            ),
+          ),
+          
+          // Messages
+          Expanded(
+            child: messagesAsync.when(
+              data: (messages) {
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_bubble_outline, size: 60, color: Colors.grey[400]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No messages yet',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Start the conversation!',
+                          style: TextStyle(color: Colors.grey[500]),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index];
+                    final isMe = message.senderId == currentUserId;
+                    
+                    return _buildMessageBubble(message, isMe, ref);
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                child: Text('Error: $error'),
+              ),
+            ),
+          ),
+          
+          // Message input
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[900] : Colors.white,
+              border: Border(
+                top: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: sendOffer,
+                  icon: Icon(Icons.attach_money, color: primaryColor),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: messageController,
+                    decoration: InputDecoration(
+                      hintText: 'Type a message...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    maxLines: null,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => sendMessage(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: isLoading.value ? null : sendMessage,
+                    icon: isLoading.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.send, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(MessageEntity message, bool isMe, WidgetRef ref) {
+    final primaryColor = const Color(0xFF32CD32);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMe) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundImage: message.senderAvatar.isNotEmpty
+                  ? NetworkImage(message.senderAvatar)
+                  : null,
+              child: message.senderAvatar.isEmpty
+                  ? const Icon(Icons.person, size: 16)
+                  : null,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isMe
+                    ? primaryColor
+                    : (isDark ? Colors.grey[800] : Colors.white),
+                borderRadius: BorderRadius.circular(16).copyWith(
+                  bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(4),
+                  bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!isMe)
+                    Text(
+                      message.senderName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isMe ? Colors.white : primaryColor,
+                      ),
+                    ),
+                  if (!isMe) const SizedBox(height: 4),
+                  _buildMessageContent(message, isMe, ref),
+                  const SizedBox(height: 4),
+                  Text(
+                    _getTimeString(message.timestamp),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isMe ? Colors.white70 : Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isMe) ...[
+            const SizedBox(width: 8),
+            Icon(
+              message.isRead ? Icons.done_all : Icons.done,
+              size: 16,
+              color: message.isRead ? Colors.blue : Colors.grey,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageContent(MessageEntity message, bool isMe, WidgetRef ref) {
+    final primaryColor = const Color(0xFF32CD32);
+
+    switch (message.messageType) {
+      case 'offer':
+        return _buildOfferMessage(message, isMe, ref);
+      case 'location':
+        return _buildLocationMessage(message, isMe);
+      case 'image':
+        return _buildImageMessage(message, isMe);
+      default:
+        return Text(
+          message.content,
+          style: TextStyle(
+            color: isMe ? Colors.white : Colors.black,
+            fontSize: 16,
+          ),
+        );
+    }
+  }
+
+  Widget _buildOfferMessage(MessageEntity message, bool isMe, WidgetRef ref) {
+    final offerDetails = message.offerDetails;
+    if (offerDetails == null) return const SizedBox.shrink();
+
+    final amount = offerDetails['offerAmount'] as double? ?? 0.0;
+    final status = offerDetails['status'] as String? ?? 'pending';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isMe ? Colors.white.withOpacity(0.2) : Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.attach_money, color: Colors.amber, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Offer: \$${amount.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+          if (message.content.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(message.content),
+          ],
+          if (status == 'pending' && !isMe) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _respondToOffer(message.id, true, ref),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    child: const Text('Accept'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => _respondToOffer(message.id, false, ref),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    child: const Text('Decline'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (status != 'pending') ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: status == 'accepted' ? Colors.green : Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                status == 'accepted' ? 'Accepted' : 'Declined',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationMessage(MessageEntity message, bool isMe) {
+    final locationDetails = message.locationDetails;
+    if (locationDetails == null) return const SizedBox.shrink();
+
+    final address = locationDetails['address'] as String? ?? 'Unknown location';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isMe ? Colors.white.withOpacity(0.2) : Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.location_on, color: Colors.red, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              address,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageMessage(MessageEntity message, bool isMe) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        message.content,
+        width: 200,
+        height: 200,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 200,
+            height: 200,
+            color: Colors.grey[300],
+            child: const Icon(Icons.image, color: Colors.grey),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildChatOptions(BuildContext context, WidgetRef ref) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.delete),
+            title: const Text('Delete Chat'),
+            onTap: () async {
+              Navigator.of(context).pop();
+              await ref.read(deleteChatProvider(chat.id));
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.block),
+            title: const Text('Block User'),
+            onTap: () {
+              Navigator.of(context).pop();
+              // TODO: Implement block user
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.report),
+            title: const Text('Report'),
+            onTap: () {
+              Navigator.of(context).pop();
+              // TODO: Implement report
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _respondToOffer(String messageId, bool accepted, WidgetRef ref) async {
+    try {
+      await ref.read(respondToOfferProvider({
+        'chatId': chat.id,
+        'messageId': messageId,
+        'accepted': accepted,
+      }));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to respond to offer: $e')),
+      );
+    }
+  }
+
+  String _getTimeString(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'now';
+    }
+  }
+} 

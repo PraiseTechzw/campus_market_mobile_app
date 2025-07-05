@@ -102,10 +102,16 @@ class AddProductStep2DetailsScreen extends HookConsumerWidget {
                                 onChanged: notifier.updateDescription,
                               ),
                               const SizedBox(height: 16),
-                              AppTextInput(
-                                label: 'Meetup Location (Optional)',
-                                hint: 'e.g., Campus Library, Student Center, Coffee Shop...',
-                                value: state.meetupLocation ?? '',
+                              TextField(
+                                decoration: InputDecoration(
+                                  labelText: 'Meetup Location (Optional)',
+                                  hintText: 'e.g., Campus Library, Student Center, Coffee Shop...',
+                                  prefixIcon: const Icon(Icons.location_on),
+                                  filled: true,
+                                  fillColor: Colors.grey[900],
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                                  helperText: 'Where would you like to meet buyers?',
+                                ),
                                 onChanged: (value) => ref.read(addProductProvider.notifier).updateMeetupLocation(value),
                               ),
                               const SizedBox(height: 16),
