@@ -5,6 +5,8 @@ import 'package:campus_market/domain/product_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProductDetailScreen extends HookConsumerWidget {
   final ProductEntity product;
@@ -79,13 +81,31 @@ class ProductDetailScreen extends HookConsumerWidget {
           const SizedBox(height: 16),
           Text(product.name, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
-          Text('₦${product.price.toStringAsFixed(2)}', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.green)),
+          Text('\$${product.price.toStringAsFixed(2)}', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.green)),
           const SizedBox(height: 8),
           Row(
             children: [
               Chip(label: Text(product.category)),
               const SizedBox(width: 8),
               Chip(label: Text(product.condition)),
+              const SizedBox(width: 8),
+              Chip(
+                label: Text('Stock: ${product.stock}'),
+                backgroundColor: product.stock > 0 ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                labelStyle: TextStyle(color: product.stock > 0 ? Colors.green : Colors.red),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.location_on, size: 16, color: Colors.grey),
+              const SizedBox(width: 4),
+              Text('${product.campus}, ${product.city}', style: TextStyle(color: Colors.grey)),
+              const Spacer(),
+              Icon(Icons.access_time, size: 16, color: Colors.grey),
+              const SizedBox(width: 4),
+              Text(_getTimeAgo(product.createdAt), style: TextStyle(color: Colors.grey)),
             ],
           ),
           const SizedBox(height: 16),
@@ -99,8 +119,24 @@ class ProductDetailScreen extends HookConsumerWidget {
                       leading: sellerAsync.data!['selfieUrl'] != null
                           ? CircleAvatar(backgroundImage: NetworkImage(sellerAsync.data!['selfieUrl']))
                           : const CircleAvatar(child: Icon(Icons.person)),
-                      title: Text(sellerAsync.data!['name'] ?? 'Unknown'),
-                      subtitle: Text(sellerAsync.data!['email'] ?? ''),
+                      title: Row(
+                        children: [
+                          Text(sellerAsync.data!['name'] ?? 'Unknown'),
+                          if (sellerAsync.data!['isVerified'] == true)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Icon(Icons.verified, color: Colors.blue, size: 20),
+                            ),
+                        ],
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(sellerAsync.data!['email'] ?? ''),
+                          if (sellerAsync.data!['phone'] != null)
+                            Text(sellerAsync.data!['phone']),
+                        ],
+                      ),
                     )
                   : const ListTile(title: Text('Seller info not found')),
           const SizedBox(height: 16),
@@ -109,20 +145,47 @@ class ProductDetailScreen extends HookConsumerWidget {
               Expanded(
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.chat),
-                  label: const Text('Message Seller'),
+                  label: const Text('Message'),
                   onPressed: () {
-                    // Implement chat navigation
                     GoRouter.of(context).push('/chat', extra: product);
                   },
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              if (sellerAsync.data != null && sellerAsync.data!['phone'] != null)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.phone),
+                    label: const Text('Call'),
+                    onPressed: () async {
+                      final phone = sellerAsync.data!['phone'];
+                      final url = 'tel:$phone';
+                      if (await canLaunchUrl(Uri.parse(url))) {
+                        await launchUrl(Uri.parse(url));
+                      }
+                    },
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.share),
+                  label: const Text('Share'),
+                  onPressed: () {
+                    Share.share('Check out this product: ${product.name} - \$${product.price.toStringAsFixed(2)}');
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.report),
-                  label: const Text('Report Product'),
+                  label: const Text('Report'),
                   onPressed: () async {
-                    // Implement report logic: show a simple dialog
                     await showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -144,5 +207,20 @@ class ProductDetailScreen extends HookConsumerWidget {
         ],
       ),
     );
+  }
+
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+    } else {
+      return 'Just now';
+    }
   }
 } 

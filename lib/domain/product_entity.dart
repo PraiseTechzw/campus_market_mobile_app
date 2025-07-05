@@ -14,6 +14,11 @@ class ProductEntity {
   final String campus;
   final String city;
   final DateTime createdAt;
+  final int stock;
+  final double rating;
+  final int reviewCount;
+  final String status; // Available, Reserved, Sold
+  final String meetupLocation;
 
   ProductEntity({
     required this.id,
@@ -29,6 +34,11 @@ class ProductEntity {
     required this.campus,
     required this.city,
     required this.createdAt,
+    this.stock = 1,
+    this.rating = 0.0,
+    this.reviewCount = 0,
+    this.status = 'Available',
+    this.meetupLocation = '',
   });
 
   factory ProductEntity.fromMap(Map<String, dynamic> map, String id) {
@@ -62,6 +72,11 @@ class ProductEntity {
       campus: map['campus'] ?? '',
       city: map['city'] ?? '',
       createdAt: createdAt,
+      stock: map['stock'] ?? 1,
+      rating: (map['rating'] ?? 0).toDouble(),
+      reviewCount: map['reviewCount'] ?? 0,
+      status: map['status'] ?? 'Available',
+      meetupLocation: map['meetupLocation'] ?? '',
     );
   }
 
@@ -79,6 +94,11 @@ class ProductEntity {
       'campus': campus,
       'city': city,
       'createdAt': createdAt,
+      'stock': stock,
+      'rating': rating,
+      'reviewCount': reviewCount,
+      'status': status,
+      'meetupLocation': meetupLocation,
     };
   }
 } 
