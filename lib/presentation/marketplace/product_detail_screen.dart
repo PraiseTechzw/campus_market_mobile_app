@@ -3,12 +3,14 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:campus_market/domain/product_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../../application/chat_providers.dart';
+import '../../infrastructure/chat_repository.dart';
 import '../chat/chat_screen.dart';
 
 class ProductDetailScreen extends HookConsumerWidget {
@@ -595,28 +597,35 @@ class ProductDetailScreen extends HookConsumerWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () async {
+                                    onPressed: () async {
                     try {
-                      // Create or get existing chat
-                      final chatIdAsync = ref.read(createChatProvider({
-                        'product': product,
-                        'sellerId': product.sellerId,
-                        'sellerName': sellerAsync.data?['name'] ?? 'Unknown',
-                      }));
-                      
-                      final chatId = await chatIdAsync.value;
-                      if (chatId == null) {
+                      // Check if user is authenticated
+                      final currentUser = FirebaseAuth.instance.currentUser;
+                      if (currentUser == null) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Failed to create chat')),
+                            const SnackBar(content: Text('Please log in to start a chat')),
                           );
                         }
                         return;
                       }
+
+                      // Create or get existing chat using repository directly
+                      final chatRepository = ChatRepository();
+                      
+                      // Debug: Check product data
+                      print('Creating chat for product: ${product.id}');
+                      print('Seller ID: ${product.sellerId}');
+                      print('Seller name: ${sellerAsync.data?['name'] ?? 'Unknown'}');
+                      
+                      final chatId = await chatRepository.createChat(
+                        product,
+                        product.sellerId,
+                        sellerAsync.data?['name'] ?? 'Unknown',
+                      );
                       
                       // Get chat details
-                      final chatAsync = ref.read(chatProvider(chatId));
-                      final chat = await chatAsync.value;
+                      final chat = await chatRepository.getChatById(chatId);
                       
                       if (chat != null && context.mounted) {
                         Navigator.push(
@@ -625,6 +634,12 @@ class ProductDetailScreen extends HookConsumerWidget {
                             builder: (context) => ChatScreen(chat: chat),
                           ),
                         );
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Failed to load chat')),
+                          );
+                        }
                       }
                     } catch (e) {
                       if (context.mounted) {
