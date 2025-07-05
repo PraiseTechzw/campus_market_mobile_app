@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -12,14 +13,14 @@ class SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(32),
-              child: Icon(Icons.school, size: 72, color: AppTheme.primaryColor),
-            ),
+            Image.asset(
+              'assets/images/marketplace.png',
+              height: 120,
+              fit: BoxFit.contain,
+            )
+                .animate()
+                .fadeIn(duration: 800.ms)
+                .scale(begin: const Offset(0.8, 0.8), end: Offset(1, 1), duration: 800.ms, curve: Curves.easeOut),
             const SizedBox(height: 32),
             Text(
               'Campus Market',
@@ -27,9 +28,12 @@ class SplashScreen extends StatelessWidget {
                     color: AppTheme.primaryColor,
                     fontWeight: FontWeight.bold,
                   ),
-            ),
+            )
+                .animate()
+                .fadeIn(duration: 700.ms, delay: 200.ms)
+                .shimmer(duration: 1200.ms, color: AppTheme.primaryColor.withOpacity(0.3)),
             const SizedBox(height: 16),
-            const CircularProgressIndicator(),
+            // No loading spinner, just a beautiful animated splash
           ],
         ),
       ),

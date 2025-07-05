@@ -5,6 +5,7 @@ import '../core/app_theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+/// OnboardingScreen displays the animated onboarding flow with images, icon, and welcoming text.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -12,6 +13,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
+/// State for OnboardingScreen, manages page transitions and onboarding completion.
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -55,19 +57,38 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: Column(
           children: [
             const SizedBox(height: 32),
-            // App logo and name
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            // Animated app logo icon, image, and welcoming tagline
+            Column(
               children: [
-                Icon(Icons.school, size: 48, color: AppTheme.primaryColor),
-                const SizedBox(width: 12),
+                Icon(Icons.school, size: 48, color: AppTheme.primaryColor)
+                    .animate()
+                    .fadeIn(duration: 600.ms)
+                    .scale(begin: const Offset(0.7, 0.7), end: Offset(1, 1), duration: 600.ms, curve: Curves.easeOut),
+                const SizedBox(height: 8),
+               
                 Text(
-                  'CampusMarket',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  'Welcome to CampusMarket!',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppTheme.primaryColor,
                         fontWeight: FontWeight.bold,
                       ),
-                ),
+                  textAlign: TextAlign.center,
+                )
+                    .animate()
+                    .fadeIn(duration: 600.ms, delay: 200.ms)
+                    .slideY(begin: -0.1, end: 0, duration: 600.ms, curve: Curves.easeOut),
+                const SizedBox(height: 4),
+                Text(
+                  'Your campus, your marketplace.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                  textAlign: TextAlign.center,
+                )
+                    .animate()
+                    .fadeIn(duration: 600.ms, delay: 400.ms)
+                    .slideY(begin: -0.05, end: 0, duration: 600.ms, curve: Curves.easeOut),
               ],
             ),
             const SizedBox(height: 16),
@@ -104,13 +125,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     TextButton(
                       onPressed: _onSkip,
                       child: const Text('Skip'),
-                    ),
+                    )
+                        .animate()
+                        .fadeIn(duration: 400.ms, delay: 100.ms),
                   Row(
                     children: List.generate(
                       _pages.length,
-                      (i) => Container(
+                      (i) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 350),
+                        curve: Curves.easeOut,
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: 8,
+                        width: i == _currentPage ? 16 : 8,
                         height: 8,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
@@ -123,10 +148,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     onPressed: _onNext,
                     child: Text(_currentPage == _pages.length - 1 ? 'Get Started' : 'Next'),
-                  ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 400.ms, delay: 100.ms)
+                      .scale(begin: const Offset(0.95, 0.95), end: Offset(1, 1), duration: 400.ms, curve: Curves.easeOut),
                 ],
               ),
             ),
@@ -137,6 +169,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
+/// Data model for each onboarding page.
 class _OnboardingPageData {
   final String title;
   final String description;
@@ -144,6 +177,7 @@ class _OnboardingPageData {
   _OnboardingPageData({required this.title, required this.description, required this.image});
 }
 
+/// Widget for a single onboarding page, with animated image, title, and description.
 class _OnboardingPage extends StatelessWidget {
   final _OnboardingPageData data;
   const _OnboardingPage({super.key, required this.data});
@@ -157,7 +191,7 @@ class _OnboardingPage extends StatelessWidget {
         children: [
           Image.asset(
             data.image,
-            height: 220,
+            height: 400,
             fit: BoxFit.contain,
           )
               .animate()
@@ -178,7 +212,10 @@ class _OnboardingPage extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             data.description,
-            style: Theme.of(context).textTheme.bodyLarge,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w500,
+                ),
             textAlign: TextAlign.center,
           )
               .animate()
