@@ -347,13 +347,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.shade100,
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: color.shade800,
+          color: color,
           fontWeight: FontWeight.bold,
           fontSize: 10,
         ),
@@ -396,7 +396,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             onPressed: () async {
               Navigator.pop(context);
               await ref.read(adminProvider.notifier).resolveReport(report['id'], 'Resolved by admin');
-              AppToast.show(context, 'Report resolved', AppToastType.success);
+              AppToast.show(context, 'Report resolved', color: Colors.green, icon: Icons.check);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             child: const Text('Resolve', style: TextStyle(color: Colors.white)),
@@ -422,7 +422,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               Navigator.pop(context);
               // TODO: Implement content blocking
               await ref.read(adminProvider.notifier).resolveReport(report['id'], 'Content blocked');
-              AppToast.show(context, 'Content blocked and report resolved', AppToastType.success);
+              AppToast.show(context, 'Content blocked and report resolved', color: Colors.green, icon: Icons.check);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Block', style: TextStyle(color: Colors.white)),

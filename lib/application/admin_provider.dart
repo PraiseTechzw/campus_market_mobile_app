@@ -155,7 +155,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
       final reports = snapshot.docs.map((doc) {
         final data = doc.data();
-        return {
+    return {
           'id': doc.id,
           ...data,
           'createdAt': data['createdAt']?.toDate(),

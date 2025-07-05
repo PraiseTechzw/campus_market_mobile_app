@@ -1,15 +1,11 @@
+import 'package:campus_market/presentation/core/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../application/admin_provider.dart';
 import '../../application/user_providers.dart';
 import '../core/app_theme.dart';
 import '../core/components/app_toast.dart';
-import 'screens/verification_screen.dart';
-import 'screens/user_management_screen.dart';
-import 'screens/reports_screen.dart';
-import 'screens/analytics_screen.dart';
-import 'screens/flagged_content_screen.dart';
-import 'screens/system_settings_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -25,7 +21,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> wit
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _currentIndex = _tabController.index;
@@ -86,7 +82,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> wit
             onPressed: () {
               ref.read(adminProvider.notifier).loadPendingVerifications();
               ref.read(adminProvider.notifier).loadAnalytics();
-              AppToast.show(context, 'Data refreshed', AppToastType.success);
+              AppToast.show(context, 'Data refreshed', color: Colors.green, icon: Icons.refresh);
             },
           ),
         ],
@@ -105,9 +101,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> wit
               tabs: [
                 _buildTab('Verification', Icons.verified_user, adminState.pendingUsers.length),
                 _buildTab('Users', Icons.people, adminState.allUsers.length),
-                _buildTab('Reports', Icons.report, adminState.reports.where((r) => r['status'] == 'pending').length),
                 _buildTab('Analytics', Icons.analytics, null),
-                _buildTab('Flagged', Icons.flag, adminState.flaggedProducts.length + adminState.flaggedRooms.length),
                 _buildTab('Settings', Icons.settings, null),
               ],
             ),
@@ -145,13 +139,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> wit
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: const [
-                VerificationScreen(),
-                UserManagementScreen(),
-                ReportsScreen(),
-                AnalyticsScreen(),
-                FlaggedContentScreen(),
-                SystemSettingsScreen(),
+              children: [
+                _buildVerificationTab(adminState),
+                _buildUsersTab(adminState),
+                _buildAnalyticsTab(adminState),
+                _buildSettingsTab(),
               ],
             ),
           ),
@@ -186,6 +178,456 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> wit
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerificationTab(AdminState adminState) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.verified_user, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                'Pending Verifications (${adminState.pendingUsers.length})',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          if (adminState.pendingUsers.isEmpty)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 64,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No users pending verification',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: ListView.separated(
+                itemCount: adminState.pendingUsers.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final user = adminState.pendingUsers[index];
+                  return _buildVerificationCard(user);
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerificationCard(user) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundImage: user.profilePhotoUrl != null 
+                      ? NetworkImage(user.profilePhotoUrl!) 
+                      : null,
+                  radius: 32,
+                  child: user.profilePhotoUrl == null 
+                      ? const Icon(Icons.person, size: 32) 
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      Text(
+                        user.email,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                      if (user.school != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.school, size: 16, color: AppTheme.primaryColor),
+                            const SizedBox(width: 4),
+                            Text(user.school!),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'PENDING',
+                    style: TextStyle(
+                      color: Colors.orange.shade800,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.check, color: Colors.white),
+                    label: const Text('Approve', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => _approveUser(user),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    label: const Text('Deny', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => _denyUser(user),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUsersTab(AdminState adminState) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.people, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                'All Users (${adminState.allUsers.length})',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          if (adminState.allUsers.isEmpty)
+            Expanded(
+              child: const Center(child: Text('No users found')),
+            )
+          else
+            Expanded(
+              child: ListView.separated(
+                itemCount: adminState.allUsers.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final user = adminState.allUsers[index];
+                  return _buildUserCard(user);
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserCard(user) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundImage: user.profilePhotoUrl != null 
+              ? NetworkImage(user.profilePhotoUrl!) 
+              : null,
+          child: user.profilePhotoUrl == null 
+              ? const Icon(Icons.person) 
+              : null,
+        ),
+        title: Text(user.name),
+        subtitle: Text(user.email),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: user.verified ? Colors.green.shade100 : Colors.orange.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            user.verified ? 'VERIFIED' : 'PENDING',
+            style: TextStyle(
+              color: user.verified ? Colors.green.shade800 : Colors.orange.shade800,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsTab(AdminState adminState) {
+    final analytics = adminState.analytics;
+    
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.analytics, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                'Platform Analytics',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.5,
+              children: [
+                _buildMetricCard(
+                  'Total Users',
+                  analytics['totalUsers']?.toString() ?? '0',
+                  Icons.people,
+                  Colors.blue,
+                ),
+                _buildMetricCard(
+                  'Verified Users',
+                  analytics['verifiedUsers']?.toString() ?? '0',
+                  Icons.verified_user,
+                  Colors.green,
+                ),
+                _buildMetricCard(
+                  'Total Products',
+                  analytics['totalProducts']?.toString() ?? '0',
+                  Icons.shopping_bag,
+                  Colors.orange,
+                ),
+                _buildMetricCard(
+                  'Total Rooms',
+                  analytics['totalRooms']?.toString() ?? '0',
+                  Icons.home,
+                  Colors.purple,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 32, color: color),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.settings, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                'System Settings',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          Expanded(
+            child: ListView(
+              children: [
+                _buildSettingCard(
+                  'Platform Settings',
+                  Icons.business,
+                  'Configure platform defaults',
+                  () => AppToast.show(context, 'Settings not implemented yet', color: Colors.blue, icon: Icons.info),
+                ),
+                const SizedBox(height: 12),
+                _buildSettingCard(
+                  'Security Settings',
+                  Icons.security,
+                  'Manage security configurations',
+                  () => AppToast.show(context, 'Security settings not implemented yet', color: Colors.blue, icon: Icons.info),
+                ),
+                const SizedBox(height: 12),
+                _buildSettingCard(
+                  'Maintenance',
+                  Icons.build,
+                  'System maintenance tools',
+                  () => AppToast.show(context, 'Maintenance tools not implemented yet', color: Colors.blue, icon: Icons.info),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingCard(String title, IconData icon, String description, VoidCallback onTap) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Icon(icon, color: AppTheme.primaryColor),
+        title: Text(title),
+        subtitle: Text(description),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: onTap,
+      ),
+    );
+  }
+
+  void _approveUser(user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Approve Verification'),
+        content: Text('Are you sure you want to approve ${user.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await ref.read(adminProvider.notifier).updateVerificationStatus(user.uid, 'approved');
+              AppToast.show(context, 'User approved successfully', color: Colors.green, icon: Icons.check);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: const Text('Approve', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _denyUser(user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Deny Verification'),
+        content: Text('Are you sure you want to deny ${user.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await ref.read(adminProvider.notifier).updateVerificationStatus(user.uid, 'denied');
+              AppToast.show(context, 'User denied', color: Colors.orange, icon: Icons.info);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Deny', style: TextStyle(color: Colors.white)),
+          ),
         ],
       ),
     );

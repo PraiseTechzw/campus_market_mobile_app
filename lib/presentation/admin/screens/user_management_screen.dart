@@ -127,7 +127,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     return users.where((user) {
       final matchesSearch = user.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           user.email.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          user.school.toLowerCase().contains(_searchQuery.toLowerCase());
+          (user.school?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
       
       final matchesStatus = _filterStatus == 'all' || user.verificationStatus == _filterStatus;
       
@@ -185,33 +185,18 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                         user.email,
                         style: const TextStyle(color: Colors.grey),
                       ),
-                      Text(
-                        '${user.school} - ${user.campus}',
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
+                      if (user.school != null && user.campus != null) ...[
+                        Text(
+                          '${user.school} - ${user.campus}',
+                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 Column(
                   children: [
-                    _buildStatusChip(user.verificationStatus),
-                    if (user.isBlocked)
-                      Container(
-                        margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'BLOCKED',
-                          style: TextStyle(
-                            color: Colors.red.shade800,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
+                    _buildStatusChip(user.verificationStatus ?? 'pending'),
                   ],
                 ),
               ],
@@ -223,18 +208,13 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
             Row(
               children: [
                 Expanded(
-                  child: _buildDetailItem('Phone', user.phone),
+                  child: _buildDetailItem('Phone', user.phone ?? 'N/A'),
                 ),
                 Expanded(
-                  child: _buildDetailItem('Student ID', user.studentId),
+                  child: _buildDetailItem('Student ID', user.studentId ?? 'N/A'),
                 ),
               ],
             ),
-            
-            if (user.createdAt != null) ...[
-              const SizedBox(height: 8),
-              _buildDetailItem('Joined', _formatDate(user.createdAt!)),
-            ],
             
             const SizedBox(height: 12),
             
@@ -270,13 +250,10 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 ] else ...[
                   Expanded(
                     child: ElevatedButton.icon(
-                      icon: Icon(
-                        user.isBlocked ? Icons.lock_open : Icons.block,
-                        size: 16,
-                      ),
-                      label: Text(user.isBlocked ? 'Unblock' : 'Block'),
+                      icon: const Icon(Icons.block, size: 16),
+                      label: const Text('Block'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: user.isBlocked ? Colors.green : Colors.red,
+                        backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 8),
                       ),
@@ -322,13 +299,13 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.shade100,
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: color.shade800,
+          color: color,
           fontWeight: FontWeight.bold,
           fontSize: 10,
         ),
@@ -395,8 +372,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              await ref.read(adminProvider.notifier).updateVerificationStatus(user.id, 'denied');
-              AppToast.show(context, 'User denied', AppToastType.info);
+              await ref.read(adminProvider.notifier).updateVerificationStatus(user.uid, 'denied');
+              AppToast.show(context, 'User denied', color: Colors.orange, icon: Icons.info);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Deny', style: TextStyle(color: Colors.white)),
@@ -407,7 +384,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   }
 
   void _toggleBlock(UserEntity user) {
-    final action = user.isBlocked ? 'unblock' : 'block';
+    final action = 'block';
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -421,15 +398,16 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              await ref.read(adminProvider.notifier).toggleUserBlock(user.id, !user.isBlocked);
+              await ref.read(adminProvider.notifier).toggleUserBlock(user.uid, !user.verified);
               AppToast.show(
                 context, 
                 'User ${action}ed', 
-                user.isBlocked ? AppToastType.success : AppToastType.warning
+                color: Colors.orange,
+                icon: Icons.warning,
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: user.isBlocked ? Colors.green : Colors.red,
+              backgroundColor: Colors.red,
             ),
             child: Text(
               action.capitalize(), 
@@ -497,9 +475,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
               _buildDetailRow('Student ID', user.studentId),
               _buildDetailRow('Status', user.verificationStatus),
               _buildDetailRow('Role', user.role),
-              _buildDetailRow('Blocked', user.isBlocked ? 'Yes' : 'No'),
-              if (user.createdAt != null)
-                _buildDetailRow('Joined', _formatDate(user.createdAt!)),
+              _buildDetailRow('Blocked', 'No'),
             ],
           ),
         ),
@@ -513,7 +489,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String? value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -526,7 +502,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          Expanded(child: Text(value)),
+          Expanded(child: Text(value ?? 'N/A')),
         ],
       ),
     );
@@ -547,7 +523,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
             onPressed: () {
               Navigator.pop(context);
               // TODO: Implement user deletion
-              AppToast.show(context, 'User deletion not implemented yet', AppToastType.warning);
+              AppToast.show(context, 'User deletion not implemented yet', color: Colors.orange, icon: Icons.warning);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete', style: TextStyle(color: Colors.white)),

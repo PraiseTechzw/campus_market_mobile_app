@@ -253,11 +253,11 @@ class _FlaggedContentScreenState extends ConsumerState<FlaggedContentScreen> wit
             // Product Header
             Row(
               children: [
-                if (product.images.isNotEmpty)
+                if (product.imageUrls.isNotEmpty)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      product.images.first,
+                      product.imageUrls.first,
                       width: 60,
                       height: 60,
                       fit: BoxFit.cover,
@@ -287,7 +287,7 @@ class _FlaggedContentScreenState extends ConsumerState<FlaggedContentScreen> wit
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        product.title,
+                        product.name,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -301,7 +301,7 @@ class _FlaggedContentScreenState extends ConsumerState<FlaggedContentScreen> wit
                         ),
                       ),
                       Text(
-                        'Seller: ${product.sellerName}',
+                        'Seller: ${product.sellerId}',
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ],
@@ -348,7 +348,7 @@ class _FlaggedContentScreenState extends ConsumerState<FlaggedContentScreen> wit
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    product.flagReason ?? 'No reason provided',
+                    'No reason provided',
                     style: TextStyle(color: Colors.red.shade700),
                   ),
                 ],
@@ -453,7 +453,7 @@ class _FlaggedContentScreenState extends ConsumerState<FlaggedContentScreen> wit
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        room.title,
+                        room.location,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -467,7 +467,7 @@ class _FlaggedContentScreenState extends ConsumerState<FlaggedContentScreen> wit
                         ),
                       ),
                       Text(
-                        'Seller: ${room.sellerName}',
+                        'Seller: ${room.userId}',
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ],
@@ -514,7 +514,7 @@ class _FlaggedContentScreenState extends ConsumerState<FlaggedContentScreen> wit
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    room.flagReason ?? 'No reason provided',
+                    'No reason provided',
                     style: TextStyle(color: Colors.red.shade700),
                   ),
                 ],
@@ -609,7 +609,7 @@ class _FlaggedContentScreenState extends ConsumerState<FlaggedContentScreen> wit
             onPressed: () async {
               Navigator.pop(context);
               await ref.read(adminProvider.notifier).removeFlag(contentId, contentType);
-              AppToast.show(context, 'Flag removed', AppToastType.success);
+              AppToast.show(context, 'Flag removed', color: Colors.green, icon: Icons.check);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             child: const Text('Remove Flag', style: TextStyle(color: Colors.white)),
@@ -635,7 +635,7 @@ class _FlaggedContentScreenState extends ConsumerState<FlaggedContentScreen> wit
             onPressed: () async {
               Navigator.pop(context);
               await ref.read(adminProvider.notifier).deleteContent(contentId, contentType);
-              AppToast.show(context, 'Content deleted', AppToastType.success);
+              AppToast.show(context, 'Content deleted', color: Colors.green, icon: Icons.check);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
