@@ -21,9 +21,16 @@ class MarketplaceScreen extends HookConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = const Color(0xFF32CD32);
 
-    // Category chips
+    // Category chips with icons
     final categories = [
-      'All', 'Electronics', 'Fashion', 'Books', 'Furniture', 'Others'
+      {'name': 'All', 'icon': Icons.apps},
+      {'name': 'Electronics', 'icon': Icons.devices_other},
+      {'name': 'Fashion', 'icon': Icons.checkroom},
+      {'name': 'Books', 'icon': Icons.menu_book},
+      {'name': 'Furniture', 'icon': Icons.chair},
+      {'name': 'Sports', 'icon': Icons.sports_soccer},
+      {'name': 'Beauty', 'icon': Icons.face},
+      {'name': 'Others', 'icon': Icons.more_horiz},
     ];
     final selectedCategory = useState('All');
     final filters = useState<Map<String, dynamic>>({
@@ -178,7 +185,7 @@ class MarketplaceScreen extends HookConsumerWidget {
                       crossAxisCount: 2,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 0.7,
+                      childAspectRatio: 0.75,
                     ),
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
@@ -291,47 +298,60 @@ class MarketplaceScreen extends HookConsumerWidget {
                                         ),
                                     ],
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            RatingBarIndicator(
-                                              rating: product.rating,
-                                              itemBuilder: (context, index) => const Icon(Icons.star, color: Colors.amber),
-                                              itemCount: 5,
-                                              itemSize: 16.0,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text('(${product.reviewCount})', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text('\$${product.price.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                                        const SizedBox(height: 4),
-                                        Text('Condition: ${product.condition}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                        if (product.meetupLocation.isNotEmpty) ...[
-                                          const SizedBox(height: 4),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            product.name, 
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
                                           Row(
                                             children: [
-                                              Icon(Icons.location_on, size: 12, color: Colors.grey),
-                                              const SizedBox(width: 4),
-                                              Expanded(
-                                                child: Text(
-                                                  product.meetupLocation,
-                                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
+                                              RatingBarIndicator(
+                                                rating: product.rating,
+                                                itemBuilder: (context, index) => const Icon(Icons.star, color: Colors.amber),
+                                                itemCount: 5,
+                                                itemSize: 12.0,
                                               ),
+                                              const SizedBox(width: 4),
+                                              Text('(${product.reviewCount})', style: const TextStyle(fontSize: 10, color: Colors.grey)),
                                             ],
                                           ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '\$${product.price.toStringAsFixed(2)}', 
+                                            style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 14),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            product.condition, 
+                                            style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                          ),
+                                          if (product.meetupLocation.isNotEmpty) ...[
+                                            const SizedBox(height: 2),
+                                            Row(
+                                              children: [
+                                                Icon(Icons.location_on, size: 10, color: Colors.grey),
+                                                const SizedBox(width: 2),
+                                                Expanded(
+                                                  child: Text(
+                                                    product.meetupLocation,
+                                                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ],
-                                      ],
+                                      ),
                                     ),
                                   ),
                                 ],
