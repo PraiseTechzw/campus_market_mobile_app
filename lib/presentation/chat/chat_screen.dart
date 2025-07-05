@@ -8,10 +8,73 @@ import '../../domain/product_entity.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../marketplace/product_detail_screen.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class ChatScreen extends HookConsumerWidget {
   final ChatEntity chat;
   const ChatScreen({Key? key, required this.chat}) : super(key: key);
+
+  Future<String> _getAddressFromCoordinates(double latitude, double longitude) async {
+    // Simplified geocoding - in a real app, you'd use a proper geocoding service
+    // For now, return coordinates as address
+    return 'Lat: ${latitude.toStringAsFixed(4)}, Lng: ${longitude.toStringAsFixed(4)}';
+  }
+
+  Future<String> _uploadImageToStorage(XFile image) async {
+    try {
+      final file = File(image.path);
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('chat_images')
+          .child('${DateTime.now().millisecondsSinceEpoch}_${image.name}');
+      
+      final uploadTask = storageRef.putFile(file);
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      
+      return downloadUrl;
+    } catch (e) {
+      throw Exception('Failed to upload image: $e');
+    }
+  }
+
+  Future<void> _pickImage(ImagePicker picker, ImageSource source, WidgetRef ref, String chatId, ValueNotifier<bool> isLoading, BuildContext context) async {
+    try {
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        isLoading.value = true;
+        
+        // Upload image to Firebase Storage
+        final imageUrl = await _uploadImageToStorage(image);
+        
+        // Send image message
+        await ref.read(sendMessageProvider({
+          'chatId': chatId,
+          'content': imageUrl,
+          'messageType': 'image',
+        }));
+        
+        isLoading.value = false;
+      }
+    } catch (e) {
+      isLoading.value = false;
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send image: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -139,78 +202,108 @@ class ChatScreen extends HookConsumerWidget {
     }
 
     Future<void> _sendLocation() async {
-      // For now, we'll use a mock location. In a real app, you'd use geolocation
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Share Location'),
-          content: const Text('Would you like to share your current location?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+      try {
+        // Check location permission
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Location permission denied')),
+              );
+            }
+            return;
+          }
+        }
+
+        if (permission == LocationPermission.deniedForever) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are permanently denied')),
+            );
+          }
+          return;
+        }
+
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Text('Getting your location...'),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                isLoading.value = true;
-                try {
-                  // Mock location - in real app, get actual location
-                  await ref.read(sendLocationProvider({
-                    'chatId': chat.id,
-                    'latitude': 40.7128, // New York coordinates as example
-                    'longitude': -74.0060,
-                    'address': 'Campus Library, Main Street',
-                  }));
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to send location: $e')),
-                  );
-                } finally {
-                  isLoading.value = false;
-                }
-              },
-              child: const Text('Share'),
-            ),
-          ],
-        ),
-      );
+          ),
+        );
+
+        // Get current position
+        final Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+
+        // Get address from coordinates (simplified - in real app, use geocoding)
+        final address = await _getAddressFromCoordinates(position.latitude, position.longitude);
+
+        // Close loading dialog
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
+
+        // Send location
+        await ref.read(sendLocationProvider({
+          'chatId': chat.id,
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'address': address,
+        }));
+
+      } catch (e) {
+        // Close loading dialog if open
+        if (context.mounted && Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to get location: $e')),
+          );
+        }
+      }
     }
 
     Future<void> _sendImage() async {
-      // For now, we'll use a mock image URL. In a real app, you'd use image picker
-      await showDialog(
+      final ImagePicker picker = ImagePicker();
+      
+      await showModalBottomSheet(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Send Image'),
-          content: const Text('Would you like to send an image?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                isLoading.value = true;
-                try {
-                  // Mock image - in real app, pick image from gallery/camera
-                  await ref.read(sendMessageProvider({
-                    'chatId': chat.id,
-                    'content': 'https://picsum.photos/400/400', // Mock image URL
-                    'messageType': 'image',
-                  }));
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to send image: $e')),
-                  );
-                } finally {
-                  isLoading.value = false;
-                }
-              },
-              child: const Text('Send'),
-            ),
-          ],
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Take Photo'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await _pickImage(picker, ImageSource.camera, ref, chat.id, isLoading, context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await _pickImage(picker, ImageSource.gallery, ref, chat.id, isLoading, context);
+                },
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -722,11 +815,23 @@ class ChatScreen extends HookConsumerWidget {
                       child: const Text('Cancel'),
                     ),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('User blocked')),
-                        );
+                        try {
+                          await ref.read(blockUserProvider(otherUserInfo['id']!));
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('User blocked successfully')),
+                            );
+                            Navigator.of(context).pop(); // Go back to chat list
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to block user: $e')),
+                            );
+                          }
+                        }
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                       child: const Text('Block'),
@@ -741,19 +846,7 @@ class ChatScreen extends HookConsumerWidget {
             title: const Text('Report'),
             onTap: () async {
               Navigator.of(context).pop();
-              await showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Report User'),
-                  content: const Text('Thank you for reporting. Our team will review this user.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-              );
+              await _showReportDialog(context, ref, otherUserInfo);
             },
           ),
         ],
@@ -788,5 +881,76 @@ class ChatScreen extends HookConsumerWidget {
     } else {
       return 'now';
     }
+  }
+
+  Future<void> _showReportDialog(BuildContext context, WidgetRef ref, Map<String, String> otherUserInfo) async {
+    final reasonController = TextEditingController();
+    final detailsController = TextEditingController();
+    
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Report User'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: reasonController,
+              decoration: const InputDecoration(
+                labelText: 'Reason for Report',
+                hintText: 'e.g., Inappropriate behavior, Spam, etc.',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: detailsController,
+              decoration: const InputDecoration(
+                labelText: 'Additional Details',
+                hintText: 'Please provide more details...',
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (reasonController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  const SnackBar(content: Text('Please provide a reason for the report')),
+                );
+                return;
+              }
+
+              Navigator.of(dialogContext).pop();
+              try {
+                await ref.read(reportUserProvider({
+                  'reportedUserId': otherUserInfo['id']!,
+                  'reason': reasonController.text.trim(),
+                  'details': detailsController.text.trim(),
+                }));
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Report submitted successfully')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to submit report: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Submit Report'),
+          ),
+        ],
+      ),
+    );
   }
 } 

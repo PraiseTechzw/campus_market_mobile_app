@@ -121,4 +121,25 @@ final otherUserInfoProvider = Provider.family<Map<String, String>, ChatEntity>((
       'avatar': chat.buyerAvatar,
     };
   }
+});
+
+// Provider for blocking a user
+final blockUserProvider = FutureProvider.family<void, String>((ref, userIdToBlock) {
+  final repo = ref.watch(chatRepositoryProvider);
+  return repo.blockUser(userIdToBlock);
+});
+
+// Provider for reporting a user
+final reportUserProvider = FutureProvider.family<void, Map<String, String>>((ref, data) {
+  final repo = ref.watch(chatRepositoryProvider);
+  final reportedUserId = data['reportedUserId']!;
+  final reason = data['reason']!;
+  final details = data['details']!;
+  return repo.reportUser(reportedUserId, reason, details);
+});
+
+// Provider for checking if user is blocked
+final isUserBlockedProvider = FutureProvider.family<bool, String>((ref, otherUserId) {
+  final repo = ref.watch(chatRepositoryProvider);
+  return repo.isUserBlocked(otherUserId);
 }); 
