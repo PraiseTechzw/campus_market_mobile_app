@@ -139,4 +139,9 @@ final addReviewProvider = FutureProvider.family<void, Map<String, dynamic>>((ref
     'rating': averageRating,
     'reviewCount': reviews.length,
   });
+});
+
+// Provider for all products by a specific user
+final userProductsProvider = StreamProvider.family<List<ProductEntity>, String>((ref, userId) {
+  return ref.watch(productRepositoryProvider).fetchUserProducts(userId);
 }); 
