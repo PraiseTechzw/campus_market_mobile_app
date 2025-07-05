@@ -370,8 +370,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              await ref.read(adminProvider.notifier).updateVerificationStatus(user.id, 'approved');
-              AppToast.show(context, 'User approved', AppToastType.success);
+              await ref.read(adminProvider.notifier).updateVerificationStatus(user.uid, 'approved');
+              AppToast.show(context, 'User approved', color: Colors.green, icon: Icons.check);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             child: const Text('Approve', style: TextStyle(color: Colors.white)),
