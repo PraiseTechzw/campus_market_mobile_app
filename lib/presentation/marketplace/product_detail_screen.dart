@@ -8,6 +8,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import '../../application/chat_providers.dart';
+import '../chat/chat_screen.dart';
 
 class ProductDetailScreen extends HookConsumerWidget {
   final ProductEntity product;
@@ -581,23 +583,59 @@ class ProductDetailScreen extends HookConsumerWidget {
                                 const SizedBox(height: 16),
                                 Row(
                                   children: [
-                                    Expanded(
-                                      child: ElevatedButton.icon(
-                                        icon: const Icon(Icons.chat),
-                                        label: const Text('Message'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: primaryColor,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          GoRouter.of(context).push('/chat', extra: product);
-                                        },
-                                      ),
-                                    ),
+                                                  Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.chat),
+                  label: const Text('Message'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () async {
+                    try {
+                      // Create or get existing chat
+                      final chatIdAsync = ref.read(createChatProvider({
+                        'product': product,
+                        'sellerId': product.sellerId,
+                        'sellerName': sellerAsync.data?['name'] ?? 'Unknown',
+                      }));
+                      
+                      final chatId = await chatIdAsync.value;
+                      if (chatId == null) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Failed to create chat')),
+                          );
+                        }
+                        return;
+                      }
+                      
+                      // Get chat details
+                      final chatAsync = ref.read(chatProvider(chatId));
+                      final chat = await chatAsync.value;
+                      
+                      if (chat != null && context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(chat: chat),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to start chat: $e')),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ),
                                     if (sellerAsync.data!['phone'] != null) ...[
                                       const SizedBox(width: 12),
                                       Expanded(

@@ -256,17 +256,17 @@ class ChatScreen extends HookConsumerWidget {
                   );
                 }
 
-                return ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMe = message.senderId == currentUserId;
-                    
-                    return _buildMessageBubble(message, isMe, ref);
-                  },
-                );
+                                  return ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      final isMe = message.senderId == currentUserId;
+                      
+                      return _buildMessageBubble(context, message, isMe, ref);
+                    },
+                  );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => Center(
@@ -336,7 +336,7 @@ class ChatScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildMessageBubble(MessageEntity message, bool isMe, WidgetRef ref) {
+  Widget _buildMessageBubble(BuildContext context, MessageEntity message, bool isMe, WidgetRef ref) {
     final primaryColor = const Color(0xFF32CD32);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -390,7 +390,7 @@ class ChatScreen extends HookConsumerWidget {
                       ),
                     ),
                   if (!isMe) const SizedBox(height: 4),
-                  _buildMessageContent(message, isMe, ref),
+                  _buildMessageContent(context, message, isMe, ref),
                   const SizedBox(height: 4),
                   Text(
                     _getTimeString(message.timestamp),
@@ -416,12 +416,12 @@ class ChatScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildMessageContent(MessageEntity message, bool isMe, WidgetRef ref) {
+  Widget _buildMessageContent(BuildContext context, MessageEntity message, bool isMe, WidgetRef ref) {
     final primaryColor = const Color(0xFF32CD32);
 
     switch (message.messageType) {
       case 'offer':
-        return _buildOfferMessage(message, isMe, ref);
+        return _buildOfferMessage(context, message, isMe, ref);
       case 'location':
         return _buildLocationMessage(message, isMe);
       case 'image':
@@ -437,7 +437,7 @@ class ChatScreen extends HookConsumerWidget {
     }
   }
 
-  Widget _buildOfferMessage(MessageEntity message, bool isMe, WidgetRef ref) {
+  Widget _buildOfferMessage(BuildContext context, MessageEntity message, bool isMe, WidgetRef ref) {
     final offerDetails = message.offerDetails;
     if (offerDetails == null) return const SizedBox.shrink();
 
@@ -476,7 +476,7 @@ class ChatScreen extends HookConsumerWidget {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => _respondToOffer(message.id, true, ref),
+                    onPressed: () => _respondToOffer(context, message.id, true, ref),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -488,7 +488,7 @@ class ChatScreen extends HookConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => _respondToOffer(message.id, false, ref),
+                    onPressed: () => _respondToOffer(context, message.id, false, ref),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
@@ -606,7 +606,7 @@ class ChatScreen extends HookConsumerWidget {
     );
   }
 
-  Future<void> _respondToOffer(String messageId, bool accepted, WidgetRef ref) async {
+  Future<void> _respondToOffer(BuildContext context, String messageId, bool accepted, WidgetRef ref) async {
     try {
       await ref.read(respondToOfferProvider({
         'chatId': chat.id,
