@@ -1,121 +1,192 @@
 import 'package:flutter/material.dart';
-import '../core/app_theme.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../../infrastructure/auth_service.dart';
-import '../core/app_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../application/admin_provider.dart';
+import '../../application/user_providers.dart';
+import '../core/app_theme.dart';
+import '../core/components/app_toast.dart';
+import 'screens/verification_screen.dart';
+import 'screens/user_management_screen.dart';
+import 'screens/reports_screen.dart';
+import 'screens/analytics_screen.dart';
+import 'screens/flagged_content_screen.dart';
+import 'screens/system_settings_screen.dart';
 
-class AdminDashboardScreen extends ConsumerWidget {
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
-  Future<void> _updateVerification(String userId, String status) async {
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({'verificationStatus': status});
+  @override
+  ConsumerState<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> with TickerProviderStateMixin {
+  late TabController _tabController;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 6, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        _currentIndex = _tabController.index;
+      });
+    });
+    
+    // Load initial data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(adminProvider.notifier).loadPendingVerifications();
+      ref.read(adminProvider.notifier).loadAnalytics();
+    });
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userEntity = ref.watch(userEntityProvider).asData?.value;
+    final adminState = ref.watch(adminProvider);
+
+    // Check admin access
     if (userEntity == null || userEntity.role != 'admin') {
       return Scaffold(
-        appBar: AppBar(title: const Text('Access Denied')),
-        body: const Center(child: Text('You do not have permission to view this page.')),
+        appBar: AppBar(
+          title: const Text('Access Denied'),
+          backgroundColor: AppTheme.primaryColor,
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.block, size: 64, color: Colors.red),
+              SizedBox(height: 16),
+              Text(
+                'You do not have permission to view this page.',
+                style: TextStyle(fontSize: 18),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       );
     }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              ref.read(adminProvider.notifier).loadPendingVerifications();
+              ref.read(adminProvider.notifier).loadAnalytics();
+              AppToast.show(context, 'Data refreshed', AppToastType.success);
+            },
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('User Verification', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('users').where('verificationStatus', isEqualTo: 'pending').snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final docs = snapshot.data?.docs ?? [];
-                  if (docs.isEmpty) {
-                    return const Center(child: Text('No users pending verification.'));
-                  }
-                  return ListView.separated(
-                    itemCount: docs.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, i) {
-                      final data = docs[i].data() as Map<String, dynamic>;
-                      final userId = docs[i].id;
-                      return Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundImage: data['profilePhotoUrl'] != null ? NetworkImage(data['profilePhotoUrl']) : null,
-                                    radius: 28,
-                                    child: data['profilePhotoUrl'] == null ? const Icon(Icons.person, size: 32) : null,
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(data['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                                        Text(data['email'] ?? '', style: const TextStyle(color: Colors.grey)),
-                                        Text('School: ${data['school'] ?? ''}'),
-                                        Text('Campus: ${data['campus'] ?? ''}'),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Text('Student ID: ${data['studentId'] ?? ''}'),
-                              const SizedBox(height: 8),
-                              if (data['studentIdPhotoUrl'] != null)
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(data['studentIdPhotoUrl'], height: 80),
-                                ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  ElevatedButton.icon(
-                                    icon: const Icon(Icons.check),
-                                    label: const Text('Approve'),
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                                    onPressed: () => _updateVerification(userId, 'approved'),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  ElevatedButton.icon(
-                                    icon: const Icon(Icons.close),
-                                    label: const Text('Deny'),
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                    onPressed: () => _updateVerification(userId, 'denied'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
+      body: Column(
+        children: [
+          // Tab Bar
+          Container(
+            color: AppTheme.primaryColor,
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              indicatorColor: Colors.white,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              tabs: [
+                _buildTab('Verification', Icons.verified_user, adminState.pendingUsers.length),
+                _buildTab('Users', Icons.people, adminState.allUsers.length),
+                _buildTab('Reports', Icons.report, adminState.reports.where((r) => r['status'] == 'pending').length),
+                _buildTab('Analytics', Icons.analytics, null),
+                _buildTab('Flagged', Icons.flag, adminState.flaggedProducts.length + adminState.flaggedRooms.length),
+                _buildTab('Settings', Icons.settings, null),
+              ],
+            ),
+          ),
+          
+          // Error Display
+          if (adminState.error != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              color: Colors.red.shade100,
+              child: Row(
+                children: [
+                  Icon(Icons.error, color: Colors.red.shade700),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      adminState.error!,
+                      style: TextStyle(color: Colors.red.shade700),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => ref.read(adminProvider.notifier).clearError(),
+                  ),
+                ],
+              ),
+            ),
+
+          // Loading Indicator
+          if (adminState.isLoading)
+            const LinearProgressIndicator(),
+
+          // Tab Content
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                VerificationScreen(),
+                UserManagementScreen(),
+                ReportsScreen(),
+                AnalyticsScreen(),
+                FlaggedContentScreen(),
+                SystemSettingsScreen(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(String title, IconData icon, int? badge) {
+    return Tab(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 8),
+          Text(title),
+          if (badge != null && badge > 0) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                badge.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -42,7 +42,7 @@ dependencies:
   firebase_auth: ^4.17.4
   cloud_firestore: ^4.15.4
   firebase_storage: ^11.6.6
-  firebase_messaging: ^14.7.10
+  firebase_messaging: ^14.7.4
   google_sign_in: ^6.2.1
   hive: ^2.2.3
   hive_flutter: ^1.1.0
@@ -66,6 +66,7 @@ dependencies:
   flutter_rating_bar: ^4.0.1
   geolocator: ^11.0.0
   permission_handler: ^11.3.1
+  flutter_local_notifications: ^19.3.0
 
 dev_dependencies:
   flutter_test:

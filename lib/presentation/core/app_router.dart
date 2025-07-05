@@ -56,6 +56,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: ref.watch(_authChangeNotifierProvider),
     routes: [
       GoRoute(
+        path: '/',
+        redirect: (_, __) => '/splash',
+      ),
+      GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
       ),
