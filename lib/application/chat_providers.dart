@@ -41,6 +41,15 @@ final createChatProvider = FutureProvider.family<String, Map<String, dynamic>>((
   return repo.createChat(product, sellerId, sellerName);
 });
 
+// Provider for creating a direct chat (for accommodation inquiries)
+final createDirectChatProvider = FutureProvider.family<String, Map<String, dynamic>>((ref, data) {
+  final repo = ref.watch(chatRepositoryProvider);
+  final otherUserId = data['otherUserId'] as String;
+  final otherUserName = data['otherUserName'] as String;
+  final initialMessage = data['initialMessage'] as String;
+  return repo.createDirectChat(otherUserId, otherUserName, initialMessage);
+});
+
 // Provider for sending a message
 final sendMessageProvider = FutureProvider.family<void, Map<String, dynamic>>((ref, data) {
   final repo = ref.watch(chatRepositoryProvider);

@@ -96,6 +96,61 @@ class ChatRepository {
     return chatRef.id;
   }
 
+  // Create a direct chat between users (for accommodation inquiries)
+  Future<String> createDirectChat(String otherUserId, String otherUserName, String initialMessage) async {
+    final userId = currentUserId;
+    if (userId == null) throw Exception('User not authenticated');
+
+    // Check if chat already exists
+    final existingChats = await _firestore
+        .collection('chats')
+        .where('buyerId', isEqualTo: userId)
+        .where('sellerId', isEqualTo: otherUserId)
+        .get();
+
+    // Filter in memory to check for active chats
+    final existingChat = existingChats.docs.where((doc) {
+      final data = doc.data();
+      return data['isActive'] == true && data['productId'] == null;
+    }).firstOrNull;
+
+    if (existingChat != null) {
+      // Send the initial message to existing chat
+      await sendMessage(existingChat.id, initialMessage);
+      return existingChat.id;
+    }
+
+    // Get current user data
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    final userData = userDoc.data() ?? {};
+
+    // Create new direct chat
+    final chatRef = await _firestore.collection('chats').add({
+      'productId': null, // No product for direct chats
+      'productName': null,
+      'productImage': null,
+      'productPrice': null,
+      'buyerId': userId,
+      'sellerId': otherUserId,
+      'buyerName': userData['name'] ?? 'Unknown',
+      'sellerName': otherUserName,
+      'buyerAvatar': userData['selfieUrl'] ?? '',
+      'sellerAvatar': '', // Will be updated when seller data is fetched
+      'lastMessageTime': FieldValue.serverTimestamp(),
+      'lastMessage': initialMessage,
+      'lastMessageSenderId': userId,
+      'unreadCount': 1, // Other user has 1 unread message
+      'isActive': true,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    // Send the initial message
+    await sendMessage(chatRef.id, initialMessage);
+
+    return chatRef.id;
+  }
+
   // Send a message
   Future<void> sendMessage(String chatId, String content, {String messageType = 'text', Map<String, dynamic>? metadata}) async {
     final userId = currentUserId;

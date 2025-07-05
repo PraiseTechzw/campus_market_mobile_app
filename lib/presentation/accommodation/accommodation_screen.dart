@@ -1,8 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../core/app_theme.dart';
+import '../core/components/app_button.dart';
+import '../core/components/app_card.dart';
+import '../../application/room_providers.dart';
+import '../../domain/room_entity.dart';
+import 'room_detail_screen.dart';
+import 'accommodation_filter_modal.dart';
 
-class AccommodationScreen extends StatelessWidget {
+class AccommodationScreen extends StatefulWidget {
   const AccommodationScreen({super.key});
+
+  @override
+  State<AccommodationScreen> createState() => _AccommodationScreenState();
+}
+
+class _AccommodationScreenState extends State<AccommodationScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _showFilterModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const AccommodationFilterModal(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,9 +41,278 @@ class AccommodationScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Accommodation'),
         backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showFilterModal,
+          ),
+        ],
       ),
-      body: const Center(
-        child: Text('Accommodation listings will appear here.'),
+      body: Column(
+        children: [
+          // Search Bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search for rooms, locations...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    onSubmitted: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Room Listings
+          Expanded(
+            child: Consumer(
+              builder: (context, ref, child) {
+                final roomsAsync = _searchQuery.isNotEmpty
+                    ? ref.watch(searchRoomsProvider(_searchQuery))
+                    : ref.watch(filteredRoomsProvider);
+
+                return roomsAsync.when(
+                  data: (rooms) {
+                    if (rooms.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.home_work_outlined,
+                              size: 80,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? 'No rooms found for "$_searchQuery"'
+                                  : 'No rooms available',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? 'Try adjusting your search terms'
+                                  : 'Check back later for new listings',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: rooms.length,
+                      itemBuilder: (context, index) {
+                        final room = rooms[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: RoomCard(room: room),
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  error: (error, stack) => Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 80,
+                          color: Colors.red[300],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error loading rooms',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.red[600],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        AppButton(
+                          onPressed: () => ref.refresh(filteredRoomsProvider),
+                          text: 'Retry',
+                          isOutlined: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class RoomCard extends StatelessWidget {
+  final RoomEntity room;
+
+  const RoomCard({super.key, required this.room});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RoomDetailScreen(room: room),
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image
+          if (room.images.isNotEmpty)
+            Container(
+              height: 200,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                image: DecorationImage(
+                  image: NetworkImage(room.images.first),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
+          // Title and Price
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  '${room.type} Room',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Text(
+                '\$${room.price.toStringAsFixed(0)}/month',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Location
+          Row(
+            children: [
+              Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  '${room.campus}, ${room.city}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Description
+          Text(
+            room.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          // Amenities
+          if (room.amenities.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: room.amenities.take(3).map((amenity) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    amenity,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          if (room.amenities.length > 3)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '+${room.amenities.length - 3} more',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
+          // Availability
+          Row(
+            children: [
+              Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                'Available: ${room.availability.isNotEmpty ? room.availability.first.toString().split(' ')[0] : 'Contact owner'}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
