@@ -69,6 +69,10 @@ class MarketplaceScreen extends HookConsumerWidget {
         ),
         actions: [
           IconButton(
+            icon: Icon(Icons.favorite_border, color: primaryColor),
+            onPressed: () => context.push('/favorites'),
+          ),
+          IconButton(
             icon: Icon(Icons.filter_list, color: primaryColor),
             onPressed: () {},
           ),

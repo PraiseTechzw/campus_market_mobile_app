@@ -12,7 +12,7 @@ class FavoritesScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final primaryColor = const Color(0xFF32CD32);
-    final favoritesAsync = ref.watch(userFavoritesProvider);
+    final favoritesAsync = ref.watch(userFavoriteProductsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -150,7 +150,7 @@ class FavoritesScreen extends HookConsumerWidget {
                         ),
                         IconButton(
                           onPressed: () async {
-                            await ref.read(toggleFavoriteProvider.notifier).toggleFavorite(product.id);
+                            await ref.read(toggleFavoriteProvider(product.id).future);
                           },
                           icon: const Icon(Icons.favorite, color: Colors.red),
                         ),
