@@ -333,7 +333,7 @@ class ChatScreen extends HookConsumerWidget {
             onPressed: () {
               showModalBottomSheet(
                 context: context,
-                builder: (context) => _buildChatOptions(context, ref),
+                builder: (context) => _buildChatOptions(context, ref, otherUserInfo),
               );
             },
           ),
@@ -782,7 +782,7 @@ class ChatScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildChatOptions(BuildContext context, WidgetRef ref) {
+  Widget _buildChatOptions(BuildContext context, WidgetRef ref, Map<String, String> otherUserInfo) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
