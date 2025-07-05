@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ProductDetailScreen extends HookConsumerWidget {
   final ProductEntity product;
@@ -111,6 +112,120 @@ class ProductDetailScreen extends HookConsumerWidget {
           const SizedBox(height: 16),
           Text(product.description, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 24),
+          // Rating and Reviews Section
+          Row(
+            children: [
+              Text('Rating & Reviews', style: Theme.of(context).textTheme.titleMedium),
+              const Spacer(),
+              Text('${product.rating.toStringAsFixed(1)} ★ (${product.reviewCount} reviews)', style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              RatingBarIndicator(
+                rating: product.rating,
+                itemBuilder: (context, index) => const Icon(Icons.star, color: Colors.amber),
+                itemCount: 5,
+                itemSize: 24.0,
+              ),
+              const SizedBox(width: 8),
+              Text('${product.rating.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Status Management
+          if (product.status == 'Available')
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.schedule),
+                    label: const Text('Reserve'),
+                    onPressed: () async {
+                      // Update product status to Reserved
+                      await FirebaseFirestore.instance
+                          .collection('products')
+                          .doc(product.id)
+                          .update({'status': 'Reserved'});
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Product reserved!')),
+                        );
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.check_circle),
+                    label: const Text('Mark Sold'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    onPressed: () async {
+                      // Update product status to Sold
+                      await FirebaseFirestore.instance
+                          .collection('products')
+                          .doc(product.id)
+                          .update({'status': 'Sold'});
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Product marked as sold!')),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          if (product.status != 'Available')
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: product.status == 'Reserved' ? Colors.orange.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: product.status == 'Reserved' ? Colors.orange : Colors.red,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    product.status == 'Reserved' ? Icons.schedule : Icons.check_circle,
+                    color: product.status == 'Reserved' ? Colors.orange : Colors.red,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Status: ${product.status}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: product.status == 'Reserved' ? Colors.orange : Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 16),
+          // Meetup Location
+          if (product.meetupLocation.isNotEmpty) ...[
+            Row(
+              children: [
+                Icon(Icons.location_on, color: primaryColor),
+                const SizedBox(width: 8),
+                const Text('Meetup Location', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(product.meetupLocation),
+            ),
+            const SizedBox(height: 16),
+          ],
           Text('Seller', style: Theme.of(context).textTheme.titleMedium),
           sellerAsync.connectionState == ConnectionState.waiting
               ? const ListTile(title: Text('Loading...'))
