@@ -2,7 +2,7 @@
 
 **Developer:** Praise Masunga  
 **Organization:** Appixia Softwares Inc.  
-**Version:** 1.0.0  
+**Version:** 1.0.0+1  
 **Status:** Ready for Production Deployment
 
 CampusMarket is a comprehensive student-focused platform that revolutionizes campus commerce, accommodation, and community building. Built with modern Flutter architecture, it provides a secure, verified marketplace exclusively for students.
@@ -12,10 +12,10 @@ CampusMarket is a comprehensive student-focused platform that revolutionizes cam
 ### Prerequisites
 - Flutter SDK 3.16.0+
 - Android Studio / VS Code
+- Google Play Console account
 - Firebase project configured
-- Google Play Console account (for deployment)
 
-### Installation & Setup
+### Development Setup
 ```bash
 # Clone the repository
 git clone https://github.com/appixia/campus_market.git
@@ -26,11 +26,14 @@ flutter pub get
 
 # Run the app
 flutter run
+```
 
-# For production build (Windows)
+### Production Build
+```bash
+# Windows
 build_production.bat
 
-# For production build (Linux/Mac)
+# Linux/Mac
 ./build_production.sh
 ```
 
