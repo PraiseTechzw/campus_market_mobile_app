@@ -613,11 +613,6 @@ class ProductDetailScreen extends HookConsumerWidget {
                       // Create or get existing chat using repository directly
                       final chatRepository = ChatRepository();
                       
-                      // Debug: Check product data
-                      print('Creating chat for product: ${product.id}');
-                      print('Seller ID: ${product.sellerId}');
-                      print('Seller name: ${sellerAsync.data?['name'] ?? 'Unknown'}');
-                      
                       final chatId = await chatRepository.createChat(
                         product,
                         product.sellerId,

@@ -22,15 +22,15 @@ class ChatRepository {
     return _firestore
         .collection('chats')
         .where('isActive', isEqualTo: true)
-        .where(Filter.or(
-          Filter('buyerId', isEqualTo: userId),
-          Filter('sellerId', isEqualTo: userId),
-        ))
-        .orderBy('lastMessageTime', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
+            .where((doc) {
+              final data = doc.data();
+              return data['buyerId'] == userId || data['sellerId'] == userId;
+            })
             .map((doc) => ChatEntity.fromMap(doc.data(), doc.id))
-            .toList());
+            .toList()
+            ..sort((a, b) => b.lastMessageTime.compareTo(a.lastMessageTime)));
   }
 
   // Stream of messages for a specific chat
@@ -51,16 +51,21 @@ class ChatRepository {
     final userId = currentUserId;
     if (userId == null) throw Exception('User not authenticated');
 
-    // Check if chat already exists
-    final existingChat = await _firestore
+    // Check if chat already exists - using a simpler query to avoid composite index
+    final existingChats = await _firestore
         .collection('chats')
         .where('productId', isEqualTo: product.id)
         .where('buyerId', isEqualTo: userId)
-        .where('sellerId', isEqualTo: sellerId)
         .get();
 
-    if (existingChat.docs.isNotEmpty) {
-      return existingChat.docs.first.id;
+    // Filter in memory to check for seller match
+    final existingChat = existingChats.docs.where((doc) {
+      final data = doc.data();
+      return data['sellerId'] == sellerId && data['isActive'] == true;
+    }).firstOrNull;
+
+    if (existingChat != null) {
+      return existingChat.id;
     }
 
     // Get current user data
@@ -245,12 +250,12 @@ class ChatRepository {
     return _firestore
         .collection('chats')
         .where('isActive', isEqualTo: true)
-        .where(Filter.or(
-          Filter('buyerId', isEqualTo: userId),
-          Filter('sellerId', isEqualTo: userId),
-        ))
         .snapshots()
         .map((snapshot) => snapshot.docs
+            .where((doc) {
+              final data = doc.data();
+              return data['buyerId'] == userId || data['sellerId'] == userId;
+            })
             .fold<int>(0, (sum, doc) => sum + (doc.data()['unreadCount'] as int? ?? 0)));
   }
 }
