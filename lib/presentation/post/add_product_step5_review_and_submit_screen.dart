@@ -43,6 +43,10 @@ class AddProductStep5ReviewAndSubmitScreen extends HookConsumerWidget {
           city: userEntity.location ?? '',
           createdAt: DateTime.now(),
           stock: 1,
+          rating: 0.0,
+          reviewCount: 0,
+          status: 'Available',
+          meetupLocation: '',
         );
         await repo.addProduct(product);
         if (context.mounted) {
