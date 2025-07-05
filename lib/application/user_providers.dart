@@ -1,5 +1,6 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../infrastructure/auth_service.dart';
 
 final sellerNameProvider = FutureProvider.family<String, String>((ref, sellerId) async {
   final doc = await FirebaseFirestore.instance.collection('users').doc(sellerId).get();
@@ -8,4 +9,11 @@ final sellerNameProvider = FutureProvider.family<String, String>((ref, sellerId)
     return data['name'] as String;
   }
   return 'Unknown';
+});
+
+final updateUserProfileProvider = FutureProvider.family<void, Map<String, dynamic>>((ref, params) async {
+  final auth = ref.watch(authServiceProvider);
+  final userId = params['userId'] as String;
+  final data = params['data'] as Map<String, dynamic>;
+  await auth.updateUserProfile(userId, data);
 }); 
