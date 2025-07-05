@@ -4,7 +4,10 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import '../../application/chat_providers.dart';
 import '../../domain/chat_entity.dart';
 import '../../domain/message_entity.dart';
+import '../../domain/product_entity.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../marketplace/product_detail_screen.dart';
 
 class ChatScreen extends HookConsumerWidget {
   final ChatEntity chat;
@@ -135,6 +138,83 @@ class ChatScreen extends HookConsumerWidget {
       );
     }
 
+    Future<void> _sendLocation() async {
+      // For now, we'll use a mock location. In a real app, you'd use geolocation
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Share Location'),
+          content: const Text('Would you like to share your current location?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                isLoading.value = true;
+                try {
+                  // Mock location - in real app, get actual location
+                  await ref.read(sendLocationProvider({
+                    'chatId': chat.id,
+                    'latitude': 40.7128, // New York coordinates as example
+                    'longitude': -74.0060,
+                    'address': 'Campus Library, Main Street',
+                  }));
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to send location: $e')),
+                  );
+                } finally {
+                  isLoading.value = false;
+                }
+              },
+              child: const Text('Share'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Future<void> _sendImage() async {
+      // For now, we'll use a mock image URL. In a real app, you'd use image picker
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Send Image'),
+          content: const Text('Would you like to send an image?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                isLoading.value = true;
+                try {
+                  // Mock image - in real app, pick image from gallery/camera
+                  await ref.read(sendMessageProvider({
+                    'chatId': chat.id,
+                    'content': 'https://picsum.photos/400/400', // Mock image URL
+                    'messageType': 'image',
+                  }));
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to send image: $e')),
+                  );
+                } finally {
+                  isLoading.value = false;
+                }
+              },
+              child: const Text('Send'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.grey[50],
       appBar: AppBar(
@@ -213,8 +293,41 @@ class ChatScreen extends HookConsumerWidget {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    // TODO: Navigate to product detail
+                  onPressed: () async {
+                    try {
+                      // Fetch product details from Firestore
+                      final productDoc = await FirebaseFirestore.instance
+                          .collection('products')
+                          .doc(chat.productId)
+                          .get();
+                      
+                      if (productDoc.exists && context.mounted) {
+                        final product = ProductEntity.fromMap(
+                          productDoc.data()!,
+                          productDoc.id,
+                        );
+                        
+                        // Navigate to product detail screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProductDetailScreen(product: product),
+                          ),
+                        );
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Product not found')),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to load product: $e')),
+                        );
+                      }
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
@@ -289,6 +402,14 @@ class ChatScreen extends HookConsumerWidget {
                 IconButton(
                   onPressed: sendOffer,
                   icon: Icon(Icons.attach_money, color: primaryColor),
+                ),
+                IconButton(
+                  onPressed: _sendLocation,
+                  icon: Icon(Icons.location_on, color: primaryColor),
+                ),
+                IconButton(
+                  onPressed: _sendImage,
+                  icon: Icon(Icons.image, color: primaryColor),
                 ),
                 Expanded(
                   child: TextField(
