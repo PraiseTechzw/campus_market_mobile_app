@@ -258,4 +258,41 @@ class ChatRepository {
             })
             .fold<int>(0, (sum, doc) => sum + (doc.data()['unreadCount'] as int? ?? 0)));
   }
+
+  // Block a user
+  Future<void> blockUser(String userIdToBlock) async {
+    final userId = currentUserId;
+    if (userId == null) throw Exception('User not authenticated');
+
+    await _firestore.collection('users').doc(userId).update({
+      'blockedUsers': FieldValue.arrayUnion([userIdToBlock]),
+    });
+  }
+
+  // Report a user
+  Future<void> reportUser(String reportedUserId, String reason, String details) async {
+    final userId = currentUserId;
+    if (userId == null) throw Exception('User not authenticated');
+
+    await _firestore.collection('reports').add({
+      'reporterId': userId,
+      'reportedUserId': reportedUserId,
+      'reason': reason,
+      'details': details,
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Check if user is blocked
+  Future<bool> isUserBlocked(String otherUserId) async {
+    final userId = currentUserId;
+    if (userId == null) return false;
+
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    final userData = userDoc.data();
+    final blockedUsers = List<String>.from(userData?['blockedUsers'] ?? []);
+    
+    return blockedUsers.contains(otherUserId);
+  }
 }

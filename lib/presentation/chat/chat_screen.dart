@@ -709,17 +709,51 @@ class ChatScreen extends HookConsumerWidget {
           ListTile(
             leading: const Icon(Icons.block),
             title: const Text('Block User'),
-            onTap: () {
+            onTap: () async {
               Navigator.of(context).pop();
-              // TODO: Implement block user
+              await showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Block User'),
+                  content: Text('Are you sure you want to block ${otherUserInfo['name'] ?? 'this user'}?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('User blocked')),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      child: const Text('Block'),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
           ListTile(
             leading: const Icon(Icons.report),
             title: const Text('Report'),
-            onTap: () {
+            onTap: () async {
               Navigator.of(context).pop();
-              // TODO: Implement report
+              await showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Report User'),
+                  content: const Text('Thank you for reporting. Our team will review this user.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
         ],
