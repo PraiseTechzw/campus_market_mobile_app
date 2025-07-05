@@ -12,6 +12,7 @@ class AddProductState {
   final List<String> imageUrls;
   final int step;
   final bool isValid;
+  final String? meetupLocation;
 
   AddProductState({
     this.type = '',
@@ -24,6 +25,7 @@ class AddProductState {
     this.imageUrls = const [],
     this.step = 0,
     this.isValid = false,
+    this.meetupLocation,
   });
 
   AddProductState copyWith({
@@ -37,6 +39,7 @@ class AddProductState {
     List<String>? imageUrls,
     int? step,
     bool? isValid,
+    String? meetupLocation,
   }) {
     return AddProductState(
       type: type ?? this.type,
@@ -49,6 +52,7 @@ class AddProductState {
       imageUrls: imageUrls ?? this.imageUrls,
       step: step ?? this.step,
       isValid: isValid ?? this.isValid,
+      meetupLocation: meetupLocation ?? this.meetupLocation,
     );
   }
 }
@@ -66,6 +70,7 @@ class AddProductNotifier extends StateNotifier<AddProductState> {
   void updateImages(List<String> urls) => state = state.copyWith(imageUrls: urls);
   void updateStep(int step) => state = state.copyWith(step: step);
   void updateIsValid(bool isValid) => state = state.copyWith(isValid: isValid);
+  void updateMeetupLocation(String meetupLocation) => state = state.copyWith(meetupLocation: meetupLocation);
   void reset() => state = AddProductState();
 }
 
