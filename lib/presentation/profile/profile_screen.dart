@@ -1,6 +1,7 @@
 import 'package:campus_market/presentation/core/app_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
@@ -465,136 +466,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _navigateToSettings() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const SettingsScreen(),
-      ),
-    );
-  }
-}
-
-// Simple Settings Screen
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildSettingsCard(
-            title: 'Account Settings',
-            items: [
-              _buildSettingsItem(
-                icon: Icons.notifications,
-                title: 'Notifications',
-                subtitle: 'Manage notification preferences',
-                onTap: () {},
-              ),
-              _buildSettingsItem(
-                icon: Icons.security,
-                title: 'Privacy',
-                subtitle: 'Manage your privacy settings',
-                onTap: () {},
-              ),
-              _buildSettingsItem(
-                icon: Icons.language,
-                title: 'Language',
-                subtitle: 'Change app language',
-                onTap: () {},
-              ),
-            ],
-            isDark: isDark,
-          ),
-          const SizedBox(height: 16),
-          _buildSettingsCard(
-            title: 'Support',
-            items: [
-              _buildSettingsItem(
-                icon: Icons.help,
-                title: 'Help Center',
-                subtitle: 'Get help and support',
-                onTap: () {},
-              ),
-              _buildSettingsItem(
-                icon: Icons.feedback,
-                title: 'Send Feedback',
-                subtitle: 'Share your thoughts with us',
-                onTap: () {},
-              ),
-              _buildSettingsItem(
-                icon: Icons.info,
-                title: 'About',
-                subtitle: 'App version and information',
-                onTap: () {},
-              ),
-            ],
-            isDark: isDark,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsCard({
-    required String title,
-    required List<Widget> items,
-    required bool isDark,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[900] : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-            ),
-          ),
-          ...items,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
-    );
+    context.go('/settings');
   }
 }
 
