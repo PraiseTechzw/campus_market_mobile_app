@@ -17,6 +17,7 @@ class RoomEntity {
   final DateTime createdAt;
   final String verificationStatus; // verified, pending, rejected
   final bool isBooked;
+  final String? bookedBy;
 
   RoomEntity({
     required this.id,
@@ -35,6 +36,7 @@ class RoomEntity {
     required this.createdAt,
     required this.verificationStatus,
     required this.isBooked,
+    this.bookedBy,
   });
 
   factory RoomEntity.fromMap(Map<String, dynamic> map, String id) {
@@ -68,6 +70,7 @@ class RoomEntity {
       createdAt: createdAt,
       verificationStatus: map['verificationStatus'] ?? 'pending',
       isBooked: map['isBooked'] ?? false,
+      bookedBy: map['bookedBy'],
     );
   }
 
@@ -88,6 +91,7 @@ class RoomEntity {
       'createdAt': createdAt,
       'verificationStatus': verificationStatus,
       'isBooked': isBooked,
+      'bookedBy': bookedBy,
     };
   }
 } 
